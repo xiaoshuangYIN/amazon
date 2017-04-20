@@ -21,4 +21,4 @@
 void set_hints(struct addrinfo* hints_p);
 void *get_in_addr(struct sockaddr *sa);
 void get_addr_info(struct addrinfo* hints_p, struct addrinfo** servinfo, int* rv, const char* sim_IP, const char* PORT);
-void connect_sock(struct addrinfo** servinfo, int* sockfd_p, char* s);
+void connect_sock(struct addrinfo** servinfo, int& sockfd_p, char* s);

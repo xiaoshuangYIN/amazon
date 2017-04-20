@@ -77,7 +77,7 @@ int main(int argc, char* argv[]){
   char s[INET6_ADDRSTRLEN];
   set_hints(&hints);
   get_addr_info(&hints, &servinfo, &rv, PORT, sim_IP);  
-  connect_sock(&servinfo, &sockfd,  s);
+  connect_sock(&servinfo, sockfd,  s);
 
   /* google protoco buffer */
   /* write connect message */

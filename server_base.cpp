@@ -22,8 +22,7 @@ void get_addr_info(struct addrinfo* hints_p, struct addrinfo** servinfo, int* rv
   }
 }
 
-void connect_sock(struct addrinfo** servinfo, int* sockfd_p, char* s){
-  int sockfd = *sockfd_p;
+void connect_sock(struct addrinfo** servinfo, int& sockfd, char* s){
   struct addrinfo* p;
 
   for(p = *servinfo; p != NULL; p = p->ai_next) {
@@ -35,6 +34,7 @@ void connect_sock(struct addrinfo** servinfo, int* sockfd_p, char* s){
     
     if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
       close(sockfd);
+      sockfd = -1;
       perror("amazon server: connect");
       continue;
     }
