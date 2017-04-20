@@ -10,7 +10,7 @@
 #include <iostream>
 #include <string>
 #include <unordered_map>
-
+#include <sstream>
 const char* sim_IP = "10.236.48.17";
 const char* PORT = "23456";
 template<typename T> bool sendMesgTo(const T & message, google::protobuf::io::FileOutputStream *out) {
@@ -83,6 +83,7 @@ int main(int argc, char* argv[]){
 
   /* google protoco buffer */
   /* AConnect */
+  send_AConnect(worldid, sockfd);
   AConnect conn;
   conn.set_worldid(1043);// worldid = the value after init world
 
@@ -97,33 +98,48 @@ int main(int argc, char* argv[]){
   if (recvMesgFrom(connRes, infile)== false){
     std::cout<<"amazon server: Aconnected fail to recv\n";
   }
-
-
-  /* APack */
-  /* fetch from db */
-  int whNum = 1;
-  int shipId = 1;
-  std::vector<std::unordered_map<std::string, std::string> > products;
-  /* ****** */
-  APack pack;
-  pack.set_whnum(whNum);
-  pack.set_shipid(shipId);
-  AProduct* prod;
-  for(int i = 0; i < products.size(); i++){
-    prod = pack.add_things();
-    prod->set_id((std::stoi((products[i])["id"]), NULL));
-    prod->set_description((products[i])["description"]);
-    prod->set_count((std::stoi((products[i])["count"]), NULL));
-  }
-  
-  /* test */
+  /* test AConnected */
   if (connRes.has_error() ){ 
     printf("response: %s\n",connRes.error().c_str());
   }
   else {
     printf("Connection was ok\n");
   }
+ 
+  /* APack */
 
+  /******* fetch from db ******/
+  int whNum = 1;
+  int shipId = 1;
+  std::vector<std::unordered_map<std::string, std::string> > products;
+  std::unordered_map<std::string, std::string> map1;
+  map1["id"] = 11;
+  map1["description"]="apple";
+  map1["count"]=2;
+  std::unordered_map<std::string, std::string> map2;
+  map2["id"] = 12;
+  map2["description"]="peach";
+  map2["count"]=3;
+  products.push_back(map1);
+  products.push_back(map2);
+  /* *********************** */
+  
+  APack pack;
+  pack.set_whnum(whNum);
+  pack.set_shipid(shipId);
+  AProduct* prod;
+  for(int i = 0; i < products.size(); i++){
+    prod = pack.add_things();
+    int id;
+    std::stringstream((products[i])["id"]) >> id;
+    prod->set_id(id);
+    prod->set_description((products[i])["description"]);
+    int count;
+    std::stringstream((products[i])["count"]) >> count;
+    prod->set_count(count);
+  }
+  std::cout<<pack.DebugString()<<"\n";
+  
   
   /*Delete all global objects allocated by libprotobuf */
   google::protobuf::ShutdownProtobufLibrary();
