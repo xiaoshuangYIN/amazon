@@ -21,7 +21,7 @@ clean:
 clobber:
 	rm -f *~ *.o                 
 
-%.o : %.cpp $(HDRS) protocal/amazon_orig_2.pb.h 
+%.o : %.cpp# $(HDRS) 
 	$(CC) $(CFLAGS) -c $< $(GPBFLAG) 
 
 %.o : %.cc protocal/amazon_orig_2.pb.h
