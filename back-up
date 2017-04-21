@@ -1,0 +1,42 @@
+bool send_APack_recv_ready(int whNum, int shipId, std::vector<std::unordered_map<std::string, std::string> > &products, int sockfd){
+  /* APack */
+  ACommands comd;
+  APack* pack = comd.add_topack();
+  pack->set_whnum(whNum);
+  pack->set_shipid(shipId);
+  //AProduct* prod;
+  for(int i = 0; i < products.size(); i++){
+    AProduct* prod = pack->add_things();
+    int id;
+    std::stringstream((products[i])["id"]) >> id;
+    prod->set_id(id);
+    prod->set_description((products[i])["description"]);
+    int count;
+    std::stringstream((products[i])["count"]) >> count;
+    prod->set_count(count);
+  }
+  std::cout<<comd.DebugString()<<"\n";
+  /* send ACommand(APack) */
+  google::protobuf::io::FileOutputStream * outfile = new google::protobuf::io::FileOutputStream(sockfd);
+  if ( sendMesgTo(comd, outfile) == false){
+    std::cout<<"amazon server: APack fail to send\n";
+    return false;
+  }
+  /* receive ready */
+  AResponses res;
+  google::protobuf::io::FileInputStream * infile = new google::protobuf::io::FileInputStream(sockfd);
+  if (recvMesgFrom(res, infile)== false){
+    std::cout<<"amazon server: AResponse(ready) fail to recv\n";
+    return false;
+  }
+  /* test ready */
+  /*
+  if (res.ready_size() > 0 ){ 
+    // printf("response: %zu\n", res.ready());
+  }
+  else {
+    printf("ready was ok\n");
+  }
+  */
+  return true;
+}

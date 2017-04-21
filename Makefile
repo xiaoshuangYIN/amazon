@@ -1,28 +1,11 @@
 CC=g++
 CFLAGS=-std=c++11
 EXTRAFLAGS=-lpqxx -lpq
-GPBLIBS=`pkg-config --libs protobuf`
-GPBFLAG=`pkg-config --cflags protobuf`
+GPBLIBS=`pkg-config --libs protobuf --cflags protobuf`
 
-#SRCS=$(wildcard *.cpp)
-
-SRCS=amazon_server.cpp  GPB.cpp server_base.cpp 
-
-OBJS=$(patsubst %.cpp, %.o,$(SRCS)) protocal/amazon_orig_2.pb.o
-
-HDRS=$(wildcard *.h) protocal/amazon_orig_2.pb.h 
-
-#amazon_server.cpp server_base.cpp GPB.cpp  protocal/amazon_orig_2.pb.cc
-
-server: $(OBJS)
-	$(CC) $(CFLAGS) -o server $(OBJS)  $(GPBLIBS)
+server: amazon_server.cpp server_base.cpp server_base.h msg.cpp msg.h protocal/amazon_orig_3.pb.h protocal/amazon_orig_3.pb.cc
+	$(CC) -o server $(CFLAGS) amazon_server.cpp server_base.cpp msg.cpp protocal/amazon_orig_3.pb.cc $(GPBLIBS) 
 clean:
 	rm -f *~ *.o server          
 clobber:
 	rm -f *~ *.o                 
-
-%.o : %.cpp $(HDRS) protocal/amazon_orig_2.pb.h 
-	$(CC) $(CFLAGS) -c $< $(GPBFLAG) 
-
-%.o : %.cc protocal/amazon_orig_2.pb.h
-	$(CC) $(CFLAGS) -o $@ -c $< $(GPBFLAG)

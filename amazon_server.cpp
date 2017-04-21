@@ -1,70 +1,14 @@
 #include "server_base.h"
-//#include "GPB.h"
-#include "protocal/amazon_orig_2.pb.h"
-
-#include <google/protobuf/io/coded_stream.h>
-#include <google/protobuf/io/zero_copy_stream_impl.h>
-#include <google/protobuf/text_format.h>
+#include "msg.h"
 
 #include <string>
 #include <iostream>
 #include <string>
 #include <unordered_map>
 #include <sstream>
+
 const char* sim_IP = "10.236.48.17";
 const char* PORT = "23456";
-template<typename T> bool sendMesgTo(const T & message, google::protobuf::io::FileOutputStream *out) {
-  {
-    //extra scope: make output go away before out->Flush()
-    // We create a new coded stream for each message.  Don't worry, this is fast.
-    google::protobuf::io::CodedOutputStream output(out);
-    // Write the size.
-    const int size = message.ByteSize();
-    output.WriteVarint32(size);
-    uint8_t* buffer = output.GetDirectBufferForNBytesAndAdvance(size);
-    if (buffer != NULL) {
-      // Optimization:  The message fits in one buffer, so use the faster
-      // direct-to-array serialization path.
-      message.SerializeWithCachedSizesToArray(buffer);
-    } else {
-      // Slightly-slower path when the message is multiple buffers.
-      message.SerializeWithCachedSizes(&output);
-      if (output.HadError()) {
-	return false;
-      }
-    }
-  }
-
-  //std::cout << "flushing...\n";
-  out->Flush();
-  return true;
-}
-
-template<typename T> bool recvMesgFrom(T & message,
-				       google::protobuf::io::FileInputStream * in ){
-  // We create a new coded stream for each message.  Don't worry, this is fast,
-  // and it makes sure the 64MB total size limit is imposed per-message rather
-  // than on the whole stream.  (See the CodedInputStream interface for more
-  // info on this limit.)
-  google::protobuf::io::CodedInputStream input(in);
-  // Read the size.
-  uint32_t size;
-  if (!input.ReadVarint32(&size)) {
-    return false;
-  }
-  // Tell the stream not to read beyond that size.
-  google::protobuf::io::CodedInputStream::Limit limit = input.PushLimit(size);
-  // Parse the message.
-  if (!message.MergeFromCodedStream(&input)) {
-    return false;
-  }
-  if (!input.ConsumedEntireMessage()) {
-    return false;
-  }
-  // Release the limit.
-  input.PopLimit(limit);
-  return true;
-}
 
 int main(int argc, char* argv[]){
 
@@ -81,66 +25,59 @@ int main(int argc, char* argv[]){
   get_addr_info(&hints, &servinfo, &rv, PORT, sim_IP);  
   connect_sock(&servinfo, sockfd,  s);
 
-  /* google protoco buffer */
+
   /* AConnect */
-  send_AConnect(worldid, sockfd);
-  AConnect conn;
-  conn.set_worldid(1043);// worldid = the value after init world
-
-  google::protobuf::io::FileOutputStream * outfile = new google::protobuf::io::FileOutputStream(sockfd);
-  if ( sendMesgTo(conn, outfile) == false){
-    std::cout<<"amazon server: Aconnect fail to send\n";
+  uint64_t worldid = 1048;// recv from UPS
+  if(!send_AConnect_recv_AConnected(worldid, sockfd)){
+    printf("send AConnect receive AConnected failed\n");
+  }
+  /* spped up */
+  uint32_t speed = 60000;
+  if(!send_simspeed(speed, sockfd)){
+    printf("speed up fail\n");
   }
 
-  /* receive */
-  AConnected connRes;
-  google::protobuf::io::FileInputStream * infile = new google::protobuf::io::FileInputStream(sockfd);
-  if (recvMesgFrom(connRes, infile)== false){
-    std::cout<<"amazon server: Aconnected fail to recv\n";
-  }
-  /* test AConnected */
-  if (connRes.has_error() ){ 
-    printf("response: %s\n",connRes.error().c_str());
-  }
-  else {
-    printf("Connection was ok\n");
-  }
- 
-  /* APack */
-
+  /* ACommands */
   /******* fetch from db ******/
-  int whNum = 1;
-  int shipId = 1;
+  uint32_t whNum = 1;
   std::vector<std::unordered_map<std::string, std::string> > products;
   std::unordered_map<std::string, std::string> map1;
-  map1["id"] = 11;
-  map1["description"]="apple";
-  map1["count"]=2;
+  map1["id"] = "10";
+  map1["description"]="cake";
+  map1["count"]="5";
   std::unordered_map<std::string, std::string> map2;
-  map2["id"] = 12;
-  map2["description"]="peach";
-  map2["count"]=3;
+  map2["id"] = "13";
+  map2["description"]="candy";
+  map2["count"]="5";
   products.push_back(map1);
   products.push_back(map2);
+
+  std::vector<std::unordered_map<std::string, std::string> > pur;
+  std::unordered_map<std::string, std::string> m1;
+  m1["id"] = "10";
+  m1["description"]="cake";
+  m1["count"]="1";
+  std::unordered_map<std::string, std::string> m2;
+  m2["id"] = "13";
+  m2["description"]="candy";
+  m2["count"]="1";
+  pur.push_back(m1);
+  pur.push_back(m2);
+
   /* *********************** */
-  
-  APack pack;
-  pack.set_whnum(whNum);
-  pack.set_shipid(shipId);
-  AProduct* prod;
-  for(int i = 0; i < products.size(); i++){
-    prod = pack.add_things();
-    int id;
-    std::stringstream((products[i])["id"]) >> id;
-    prod->set_id(id);
-    prod->set_description((products[i])["description"]);
-    int count;
-    std::stringstream((products[i])["count"]) >> count;
-    prod->set_count(count);
+
+  if(!send_APurchaseMore_recv_arrived(whNum,  products, sockfd)){
+     printf("send APurchaseMore receive arrived failed\n");
+   }
+
+
+  uint64_t shipId = 0;
+  for(shipId = 1; shipId < 6; shipId++){
+    if(!send_APack_recv_ready(whNum, shipId, pur, sockfd)){
+      printf("send APack receive ready failed\n");
+    }
   }
-  std::cout<<pack.DebugString()<<"\n";
-  
-  
+
   /*Delete all global objects allocated by libprotobuf */
   google::protobuf::ShutdownProtobufLibrary();
   

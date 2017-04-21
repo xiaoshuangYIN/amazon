@@ -5,10 +5,14 @@ GPBLIBS=`pkg-config --libs protobuf`
 GPBFLAG=`pkg-config --cflags protobuf`
 
 #SRCS=$(wildcard *.cpp)
-SRCS=amazon_server.cpp  server_base.cpp 
+
+SRCS=amazon_server.cpp  msg.cpp server_base.cpp 
+
 OBJS=$(patsubst %.cpp, %.o,$(SRCS)) protocal/amazon_orig_2.pb.o
-HDRS=$(wildcard *.h) 
-#amazon_server.cpp server_base.cpp protocal/amazon_orig_2.pb.cc
+
+HDRS=$(wildcard *.h) #protocal/amazon_orig_2.pb.h 
+
+#amazon_server.cpp server_base.cpp GPB.cpp  protocal/amazon_orig_2.pb.cc
 
 server: $(OBJS)
 	$(CC) $(CFLAGS) -o server $(OBJS)  $(GPBLIBS)
@@ -18,6 +22,7 @@ clobber:
 	rm -f *~ *.o                 
 
 %.o : %.cpp $(HDRS) 
-	$(CC) $(CFLAGS) -c $< $(GPBFLAG)
+	$(CC) $(CFLAGS) -c $< $(GPBFLAG) 
+
 %.o : %.cc protocal/amazon_orig_2.pb.h
 	$(CC) $(CFLAGS) -o $@ -c $< $(GPBFLAG)

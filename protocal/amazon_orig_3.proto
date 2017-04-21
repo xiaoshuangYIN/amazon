@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+
+message AProduct {
+   int64 id = 1;
+   string description = 2;
+   int32 count = 3;
+            }
+
+message AInitWarehouse {
+   int32 x = 1;
+   int32 y = 2;
+}
+
+
+message AConnect {
+  int64 worldid = 1;
+  repeated AInitWarehouse initwh = 2;
+}
+message AConnected {
+  string error = 1;
+}
+
+message APack {
+  int32 whnum  = 1;
+  repeated AProduct things = 2;
+  int64 shipid = 3;
+}
+
+message APutOnTruck {
+  int32 whnum = 1;
+  int32 truckid = 2;
+  int64 shipid = 3;
+ }
+
+message APurchaseMore {
+  int32 whnum = 1;
+  repeated AProduct things = 2;
+}
+
+
+message ACommands {
+   repeated APurchaseMore buy = 1;
+      repeated APutOnTruck load = 2;
+         repeated APack topack = 3;
+	    uint32 simspeed = 4; //units/minute
+	       bool disconnect = 5; //after processing/sending replies, close
+	       }
+
+message AResponses {
+   repeated APurchaseMore arrived = 1;
+      repeated int64 ready = 2; //ship ids
+         repeated int64 loaded = 3; //ship ids
+	    string error = 4;
+	       bool finished = 5;
+	       }
+
