@@ -1,6 +1,6 @@
 #include "server_base.h"
-#include "msg.h"
 #include "thread.h"
+#include "msg.h"
 
 #include <unistd.h>
 #include <sys/types.h>
@@ -50,9 +50,10 @@ int main(int argc, char* argv[]){
   int rc1, rc2;
   thread_send_para send_para;
   send_para.id = std::string("send");
+  send_para.sockfd = sockfd;
   thread_recv_para recv_para;
   recv_para.id = std::string("recv");
-  
+  recv_para.sockfd = sockfd;
 
   rc1 = pthread_create(&thread_send, NULL, send_thread_func, &send_para);
   if (rc1){

@@ -49,15 +49,14 @@ template<typename T> bool recvMesgFrom(T & message,
   return true;
 }
 
-void recv_AConnected(int sockfd){
+void recv_AResponse(int sockfd, AResponses& res){
   /* receive */
-  AConnected connRes;
   google::protobuf::io::FileInputStream * infile = new google::protobuf::io::FileInputStream(sockfd);
-  if (!recvMesgFrom(connRes, infile)){
-    std::cerr<<"amazon server: Aconnected fail to recv\n";
+  if (!recvMesgFrom(res, infile)){
+    std::cerr<<"amazon server: AResponse fail to recv\n";
   }
   /* test AConnected */
-  printf("rec from sim: %s\n", connRes.DebugString().c_str());
+  printf("rec from sim: %s\n", res.DebugString().c_str());
 }
 
 bool send_AConnect(uint64_t worldid, int sockfd){
