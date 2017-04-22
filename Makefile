@@ -3,8 +3,8 @@ CFLAGS=-std=c++11
 EXTRAFLAGS=-lpqxx -lpq
 GPBLIBS=`pkg-config --libs protobuf --cflags protobuf`
 PTHREAD=-lpthread
-server: server.cpp server_base.cpp server_base.h msg.cpp msg.h protocal/amazon_orig_3.pb.h protocal/amazon_orig_3.pb.cc
-	$(CC) $(PTHREAD) -o server $(CFLAGS) server.cpp server_base.cpp msg.cpp protocal/amazon_orig_3.pb.cc $(GPBLIBS) 
+server: server.cpp server_base.cpp server_base.h msg.cpp msg.h protocal/amazon_orig_3.pb.h protocal/amazon_orig_3.pb.cc thread.h thread.cpp
+	$(CC) $(PTHREAD) -o server $(CFLAGS) server.cpp server_base.cpp msg.cpp protocal/amazon_orig_3.pb.cc thread.cpp $(GPBLIBS) 
 amazon_server: amazon_server.cpp server_base.cpp server_base.h msg.cpp msg.h protocal/amazon_orig_3.pb.h protocal/amazon_orig_3.pb.cc
 	$(CC) -o amazon_server $(CFLAGS) amazon_server.cpp server_base.cpp msg.cpp protocal/amazon_orig_3.pb.cc $(GPBLIBS) 
 

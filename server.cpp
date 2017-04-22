@@ -1,5 +1,6 @@
 #include "server_base.h"
 #include "msg.h"
+#include "thread.h"
 
 #include <unistd.h>
 #include <sys/types.h>
@@ -10,32 +11,11 @@
 #include <sstream>
 #include <pthread.h>
 #include <stdio.h>
+
 const char* sim_IP = "10.236.48.17";
 const char* PORT = "23456";
 
-struct _thread_send_para {
-  std::string id;
-};
-typedef struct _thread_send_para thread_send_para;  
 
-struct _thread_recv_para {
-  std::string id;
-};
-typedef struct _thread_recv_para thread_recv_para;
-
-void* send_thread_func(void* para)
-{
-  thread_send_para* para_send = (thread_send_para*)para;
-  printf("It's me, thread %s!\n", (para_send->id).c_str());
-  pthread_exit(NULL);
-}
-
-void* recv_thread_func(void* para)
-{
-  thread_recv_para* para_recv = (thread_recv_para*)para;
-  printf("It's me, thread %s!\n", (para_recv->id).c_str());
-  pthread_exit(NULL);
-}
 int main(int argc, char* argv[]){
 
   /*  connect socket to sim */
