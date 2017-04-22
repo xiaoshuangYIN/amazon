@@ -1,5 +1,7 @@
 #include "msg.h"
 
+
+
 template<typename T> bool sendMesgTo(const T & message, google::protobuf::io::FileOutputStream *out) {
   {
 
@@ -131,7 +133,7 @@ bool send_APack(uint32_t whNum, uint64_t shipId, std::vector<std::unordered_map<
   return true;
 }
 
-bool send_APurchaseMore(uint32_t whNum, std::vector<std::unordered_map<std::string, std::string> > &products, int sockfd){
+bool send_APurchaseMore(uint32_t whNum, std::vector<std::unordered_map<std::string, std::string> > & products, int sockfd){
   /* Acommands(APurchaseMore) */
   ACommands comd;
   APurchaseMore* purchase = comd.add_buy();
@@ -165,6 +167,34 @@ bool send_simspeed(uint32_t speed, int sockfd){
   /* Acommands(APurchaseMore) */
   ACommands comd;
   comd.set_simspeed(speed);
+
+  /* send ACommand(APack) */
+  google::protobuf::io::FileOutputStream * outfile = new google::protobuf::io::FileOutputStream(sockfd);
+  if ( sendMesgTo(comd, outfile) == false){
+    std::cout<<"amazon server: APack fail to send\n";
+    return false;
+  }
+  return true;
+}
+bool send_APutOnTruck(int sockfd, std::vector<std::unordered_map<std::string, std::string> > loads){
+
+
+  /* Acommands(APack) */
+
+  ACommands comd;
+  for (int i = 0; i < loads.size(); i++){
+    APutOnTruck* load = comd.add_load();
+    int32_t whNum;
+    int32_t truckId;
+    int64_t shipId;
+    std::stringstream((loads[i])["whNum"]) >> whNum;
+    std::stringstream((loads[i])["shipId"]) >> shipId;
+    std::stringstream((loads[i])["truckId"]) >> truckId;
+    load->set_whnum(whNum);
+    load->set_shipid(shipId);
+    load->set_truckid(truckId);
+  }
+  std::cout<<comd.DebugString()<<"\n";
 
   /* send ACommand(APack) */
   google::protobuf::io::FileOutputStream * outfile = new google::protobuf::io::FileOutputStream(sockfd);
