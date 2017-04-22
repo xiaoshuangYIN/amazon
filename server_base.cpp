@@ -44,6 +44,7 @@ void connect_sock(struct addrinfo** servinfo, int& sockfd, char* s){
     fprintf(stderr, "amazon server: failed to connect\n");
     exit(1);
   }
+  
   printf("connect success\n");
   inet_ntop(p->ai_family, get_in_addr((struct sockaddr *)p->ai_addr),
             s, sizeof s);

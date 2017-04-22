@@ -10,9 +10,11 @@
 #include <sstream>
 #include <stdint.h>
 
+/* send message and receive is seperated */
 template<typename T> bool sendMesgTo(const T & , google::protobuf::io::FileOutputStream *);
 template<typename T> bool recvMesgFrom(T & , google::protobuf::io::FileInputStream * );
-bool send_AConnect_recv_AConnected(uint64_t , int);
-bool send_APack_recv_ready(uint32_t , uint64_t , std::vector<std::unordered_map<std::string, std::string> >& , int );
-bool send_APurchaseMore_recv_arrived(uint32_t , std::vector<std::unordered_map<std::string, std::string> > &, int );
+bool send_AConnect(uint64_t , int);
+bool send_APack(uint32_t , uint64_t , std::vector<std::unordered_map<std::string, std::string> >& , int );
+bool send_APurchaseMore(uint32_t , std::vector<std::unordered_map<std::string, std::string> > &, int );
 bool send_simspeed(uint32_t speed, int sockfd);
+bool send_AConnect_recv_AConnected(uint64_t worldid, int sockfd);

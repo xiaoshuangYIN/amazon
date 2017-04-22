@@ -49,9 +49,33 @@ template<typename T> bool recvMesgFrom(T & message,
   return true;
 }
 
+void recv_AConnected(int sockfd){
+  /* receive */
+  AConnected connRes;
+  google::protobuf::io::FileInputStream * infile = new google::protobuf::io::FileInputStream(sockfd);
+  if (!recvMesgFrom(connRes, infile)){
+    std::cerr<<"amazon server: Aconnected fail to recv\n";
+  }
+  /* test AConnected */
+  printf("rec from sim: %s\n", connRes.DebugString().c_str());
+}
+
+bool send_AConnect(uint64_t worldid, int sockfd){
+  AConnect conn;
+  conn.set_worldid(worldid);// worldid = the value after init world
+  /* send AConnect*/
+  google::protobuf::io::FileOutputStream * outfile = new google::protobuf::io::FileOutputStream(sockfd);
+  if (! sendMesgTo(conn, outfile)){
+    std::cout<<"amazon server: Aconnect fail to send\n";
+    return false;
+  }
+  
+  return true;
+}
 bool send_AConnect_recv_AConnected(uint64_t worldid, int sockfd){
   AConnect conn;
   conn.set_worldid(worldid);// worldid = the value after init world
+
   /* send AConnect*/
   google::protobuf::io::FileOutputStream * outfile = new google::protobuf::io::FileOutputStream(sockfd);
   if (! sendMesgTo(conn, outfile)){
@@ -61,13 +85,14 @@ bool send_AConnect_recv_AConnected(uint64_t worldid, int sockfd){
 
   /* receive */
   AConnected connRes;
+
   google::protobuf::io::FileInputStream * infile = new google::protobuf::io::FileInputStream(sockfd);
   if (!recvMesgFrom(connRes, infile)){
     std::cout<<"amazon server: Aconnected fail to recv\n";
     return false;
   }
   /* test AConnected */
-  if (connRes.error() != ""){ 
+  if (connRes.error() != ""){
     printf("response: %s\n",connRes.error().c_str());
   }
   else {
@@ -76,7 +101,8 @@ bool send_AConnect_recv_AConnected(uint64_t worldid, int sockfd){
   return true;
 }
 
-bool send_APack_recv_ready(uint32_t whNum, uint64_t shipId, std::vector<std::unordered_map<std::string, std::string> > &products, int sockfd){
+
+bool send_APack(uint32_t whNum, uint64_t shipId, std::vector<std::unordered_map<std::string, std::string> > &products, int sockfd){
   /* Acommands(APack) */
 
   ACommands comd;
@@ -95,7 +121,6 @@ bool send_APack_recv_ready(uint32_t whNum, uint64_t shipId, std::vector<std::uno
     prod->set_count(count);
     prod->set_id(id);
   }
-
   std::cout<<comd.DebugString()<<"\n";
 
   /* send ACommand(APack) */
@@ -104,22 +129,10 @@ bool send_APack_recv_ready(uint32_t whNum, uint64_t shipId, std::vector<std::uno
     std::cout<<"amazon server: APack fail to send\n";
     return false;
   }
-  /* receive ready */
-  AResponses res;
-  google::protobuf::io::FileInputStream * infile = new google::protobuf::io::FileInputStream(sockfd);
-  if (recvMesgFrom(res, infile)== false){
-    std::cout<<"amazon server: AResponse(ready) fail to recv\n";
-    return false;
-  }
-  /* test ready */
-  printf("%s\n", res.DebugString().c_str());
-  if (res.ready_size()== 0 ){ 
-    printf("ready was not received\n");
-  }
   return true;
 }
 
-bool send_APurchaseMore_recv_arrived(uint32_t whNum, std::vector<std::unordered_map<std::string, std::string> > &products, int sockfd){
+bool send_APurchaseMore(uint32_t whNum, std::vector<std::unordered_map<std::string, std::string> > &products, int sockfd){
   /* Acommands(APurchaseMore) */
   ACommands comd;
   APurchaseMore* purchase = comd.add_buy();
@@ -144,19 +157,6 @@ bool send_APurchaseMore_recv_arrived(uint32_t whNum, std::vector<std::unordered_
     std::cout<<"amazon server: APack fail to send\n";
     return false;
   }
-  /* receive ready */
-  AResponses res;
-  google::protobuf::io::FileInputStream * infile = new google::protobuf::io::FileInputStream(sockfd);
-  if (recvMesgFrom(res, infile)== false){
-    std::cout<<"amazon server: AResponse(ready) fail to recv\n";
-    return false;
-  }
-  /* test arrived */
-  std::cout<<res.DebugString() <<"\n";
-  if (res.arrived_size() ==  0 ){ 
-    printf("no arrived msg\n");
-  }
-  
   return true;
 }
 
@@ -173,14 +173,5 @@ bool send_simspeed(uint32_t speed, int sockfd){
     std::cout<<"amazon server: APack fail to send\n";
     return false;
   }
-  /* receive ready */
-  AResponses res;
-  google::protobuf::io::FileInputStream * infile = new google::protobuf::io::FileInputStream(sockfd);
-  if (recvMesgFrom(res, infile)== false){
-    std::cout<<"amazon server: AResponse(ready) fail to recv\n";
-    return false;
-  }
-  /* test arrived */
-  std::cout<<res.DebugString() <<"\n";
   return true;
 }

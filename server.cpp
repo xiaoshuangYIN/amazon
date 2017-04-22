@@ -1,76 +1,45 @@
 #include "server_base.h"
-#include "protocal/amazon.pb.h"
-#include <google/protobuf/io/coded_stream.h>
-#include <google/protobuf/io/zero_copy_stream_impl.h>
-#include <google/protobuf/text_format.h>
+#include "msg.h"
 
-
+#include <unistd.h>
+#include <sys/types.h>
 #include <string>
 #include <iostream>
-
+#include <string>
+#include <unordered_map>
+#include <sstream>
+#include <pthread.h>
+#include <stdio.h>
 const char* sim_IP = "10.236.48.17";
 const char* PORT = "23456";
 
-template<typename T> bool sendMesgTo(const T & message, google::protobuf::io::FileOutputStream *out) {
-  {
-    //extra scope: make output go away before out->Flush()
-    // We create a new coded stream for each message.  Don't worry, this is fast.
-    google::protobuf::io::CodedOutputStream output(out);
-    // Write the size.
-    const int size = message.ByteSize();
-    output.WriteVarint32(size);
-    uint8_t* buffer = output.GetDirectBufferForNBytesAndAdvance(size);
-    if (buffer != NULL) {
-      // Optimization:  The message fits in one buffer, so use the faster
-      // direct-to-array serialization path.
-      message.SerializeWithCachedSizesToArray(buffer);
-    } else {
-      // Slightly-slower path when the message is multiple buffers.
-      message.SerializeWithCachedSizes(&output);
-      if (output.HadError()) {
-	return false;
-      }
-    }
-  }
-  //std::cout << "flushing...\n";
-  out->Flush();
-  return true;
+struct _thread_send_para {
+  std::string id;
+};
+typedef struct _thread_send_para thread_send_para;  
+
+struct _thread_recv_para {
+  std::string id;
+};
+typedef struct _thread_recv_para thread_recv_para;
+
+void* send_thread_func(void* para)
+{
+  thread_send_para* para_send = (thread_send_para*)para;
+  printf("It's me, thread %s!\n", (para_send->id).c_str());
+  pthread_exit(NULL);
 }
 
-template<typename T> bool recvMesgFrom(T & message,
-				       google::protobuf::io::FileInputStream * in ){
-  // We create a new coded stream for each message.  Don't worry, this is fast,
-  // and it makes sure the 64MB total size limit is imposed per-message rather
-  // than on the whole stream.  (See the CodedInputStream interface for more
-  // info on this limit.)
-  google::protobuf::io::CodedInputStream input(in);
-
-  // Read the size.
-  uint32_t size;
-  if (!input.ReadVarint32(&size)) {
-    std::cout<<"read size false\n";
-    return false;
-  }
-  printf("receive size : %d\n", size);
-  // Tell the stream not to read beyond that size.
-  google::protobuf::io::CodedInputStream::Limit limit = input.PushLimit(size);
-
-  // Parse the message.
-  if (!message.MergeFromCodedStream(&input)) {
-    return false;
-  }
-  if (!input.ConsumedEntireMessage()) {
-    return false;
-  }
-  // Release the limit.
-  input.PopLimit(limit);
-  return true;
+void* recv_thread_func(void* para)
+{
+  thread_recv_para* para_recv = (thread_recv_para*)para;
+  printf("It's me, thread %s!\n", (para_recv->id).c_str());
+  pthread_exit(NULL);
 }
-
 int main(int argc, char* argv[]){
 
-
   /*  connect socket to sim */
+
   int sockfd, numbytes;  
   struct addrinfo hints, *servinfo, *p;
   int rv;
@@ -79,34 +48,48 @@ int main(int argc, char* argv[]){
   get_addr_info(&hints, &servinfo, &rv, PORT, sim_IP);  
   connect_sock(&servinfo, sockfd,  s);
 
-  /* google protoco buffer */
-  /* write connect message */
+  /* Aconnect and Aconnected with sim*/
 
-  AConnect* conn = new AConnect();
-  conn->set_worldid(1);
-
-  google::protobuf::io::FileOutputStream * outfile = new google::protobuf::io::FileOutputStream(sockfd);
-  bool suc = sendMesgTo(*conn, outfile);
-  if (suc == false){
-    std::cout<<"amazon server: Aconnect fail to send\n";
+  uint64_t worldid = 1049;// recv from UPS
+  if(!send_AConnect_recv_AConnected(worldid, sockfd)){
+    printf("send AConnect receive AConnected failed\n");
   }
 
-  /* receive */
-  AConnected* connRep = new AConnected();
-  google::protobuf::io::FileInputStream * infile = new google::protobuf::io::FileInputStream(sockfd);
-  suc = recvMesgFrom(*connRep, infile);
-  if (suc == false){
-    std::cout<<"amazon server: Aconnected fail to recv\n";
+  /* speed up */
+  /*
+  uint32_t speed = 6000;
+  if(!send_simspeed(speed, sockfd)){
+    printf("speed up fail\n");
+  }
+  */
+
+  
+  /* create two thrads*/
+  pthread_t thread_send;
+  pthread_t thread_recv;
+  int rc1, rc2;
+  thread_send_para send_para;
+  send_para.id = std::string("send");
+  thread_recv_para recv_para;
+  recv_para.id = std::string("recv");
+  
+
+  rc1 = pthread_create(&thread_send, NULL, send_thread_func, &send_para);
+  if (rc1){
+    printf("ERROR; return code from pthread_create() is %d\n", rc1);
+    exit(-1);
   }
 
-  
-  /* test */
-  printf("response: %s\n",connRep->error().c_str());
-  
+  rc2 = pthread_create(&thread_recv, NULL, recv_thread_func, &recv_para);
+  if (rc2){
+    printf("ERROR; return code from pthread_create() is %d\n", rc2);
+    exit(-1);
+  }
 
-  
-  /*Delete all global objects allocated by libprotobuf */
-  google::protobuf::ShutdownProtobufLibrary();
-  
+
+  /* Last thing that main() should do */
+  pthread_exit(NULL);
   return 0;
 }
+
+
