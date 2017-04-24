@@ -29,7 +29,8 @@ CREATE TABLE Whstock (
    	pid int8,
    	descr text,
    	num int8,
-   	CONSTRAINT whpkey PRIMARY KEY (wid,hid,pid)
+   	CONSTRAINT whpkey PRIMARY KEY (wid,hid,pid),
+	UNIQUE (hid, pid)
 );
  
 CREATE TABLE Ship_temp (
@@ -38,16 +39,17 @@ CREATE TABLE Ship_temp (
        pid int8,
        num_buy int4,
        cid int8,
-       tid int8
+       tid SERIAL PRIMARY KEY
 );
 
 CREATE TABLE shipment (
+       sid SERIAL PRIMARY KEY	
        wid int8,
        hid int4,
-       sid int4,
-       a_tid int8[],
+       tid_list int8[],
        cid int8,
-       status_detail text
+       status_detail text,
+       track_num text
 );
 
 

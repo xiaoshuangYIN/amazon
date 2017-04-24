@@ -1,68 +1,25 @@
 #include "thread.h"
 
+template <class T>
+void to_string(T a, std::string& res){
+  std::stringstream ss;
+  ss << a;
+  res = ss.str();
+  ss.str("");
+}
 
 void* send_thread_func(void* para)
 {
-
-  /******* fetch from db ******/
-  /*
-  // buy
-  uint32_t whNum = 1;
-  std::vector<std::unordered_map<std::string, std::string> > products;
-  std::unordered_map<std::string, std::string> map1;
-  map1["id"] = "10";
-  map1["description"]="cake";
-  map1["count"]="5";
-  std::unordered_map<std::string, std::string> map2;
-  map2["id"] = "13";
-  map2["description"]="candy";
-  map2["count"]="5";
-  products.push_back(map1);
-  products.push_back(map2);
-  // pack
-  std::vector<std::unordered_map<std::string, std::string> > pur;
-  std::unordered_map<std::string, std::string> m1;
-  m1["id"] = "10";
-  m1["description"]="cake";
-  m1["count"]="1";
-  std::unordered_map<std::string, std::string> m2;
-  m2["id"] = "13";
-  m2["description"]="candy";
-  m2["count"]="1";
-  pur.push_back(m1);
-  pur.push_back(m2);
-  // load
-  std::vector<std::unordered_map<std::string, std::string> > loads;
-  std::unordered_map<std::string, std::string> mm1;
-  std::unordered_map<std::string, std::string> mm2;
-  std::unordered_map<std::string, std::string> mm3;
-  std::unordered_map<std::string, std::string> mm4;
-  std::unordered_map<std::string, std::string> mm5;
-  mm1["whNum"] = "1";
-  mm1["shipId"]= "1";
-  mm1["truckId"] = "1";
-  mm2["whNum"] = "1";
-  mm2["shipId"]= "2";
-  mm2["truckId"] = "1";
-  mm3["whNum"] = "1";
-  mm3["shipId"]= "3";
-  mm3["truckId"] = "1";
-  mm4["whNum"] = "1";
-  mm4["shipId"]= "4";
-  mm4["truckId"] = "1";
-  mm5["whNum"] = "1";
-  mm5["shipId"]= "5";
-  mm5["truckId"] = "1";
-  loads.push_back(mm1);
-  loads.push_back(mm2);
-  loads.push_back(mm3);
-  loads.push_back(mm4);
-  loads.push_back(mm5);
-  /* *********************** */
+  //global:
+  int purchase_id = 1;
+  int wh_count = 10;
+  int worldid = 1049;
+  std::string s_wid;
+  to_string(worldid, s_wid);
   thread_send_para* para_send = (thread_send_para*)para;
   printf("It's me, thread %s!\n", (para_send->id).c_str());
   int sockfd = para_send->sockfd;
-
+  
   /* purchase more */ // change
   /*
   if(!send_APurchaseMore(whNum,  products, sockfd)){
@@ -85,51 +42,80 @@ void* send_thread_func(void* para)
   }
   */
 
+
   // load purchase with status 0(order placed)
-  std::vector<std::unordered_map<std::string, std::string> > prod_array;
-  db_get_purch(para_send->C, std::string("0"), prod_array);
+  while(true){
+    std::vector<std::unordered_map<std::string, std::string> > prod_array;
+    std::string purchase_id_str;
+    to_string(purchase_id, purchase_id_str);
+    //std::cout<< purchase_id_str << std::endl;
+    bool ready = db_get_purch(para_send->C, std::string("0"), purchase_id_str , prod_array);
+    if(ready == false){
+      continue;
+    }
+    //  for all product in this purchase
+    for(int i = 0; i < prod_array.size(); i++){
+      std::cout << (prod_array[i])["descrp"]<<std::endl;
+      pq_t pq(comp(false));
+      int total_num = 0;
+      int sum = 0;
+      int buy_count;
+      std::stringstream((prod_array[i])["count"]) >> buy_count;
+      printf("buy: %d\n", buy_count);
 
-  for(int i = 0; i < prod_array.size(); i++){
-    std::cout << (prod_array[i])["descrp"]<<std::endl;
-    pq_t pq(comp(false));
-    int total_num = 0;
-    int sum = 0;
-    int buy_count;
-    std::stringstream((prod_array[i])["count"]) >> buy_count;
-    // find the wharehouse number
-    std::vector<std::unordered_map<std::string, int> > wh_map_array;
-    db_get_hid(para_send->C, (prod_array[i])["pid"], wh_map_array);
-    
-    if(wh_map_array.size() > 0){
-      for(int j = 0; j < wh_map_array.size(); j++){
-	printf("%d\n",(wh_map_array[j])["num"]);
-	//put into priority queue
-	pq.push(wh_map_array[j]);
-	total_num += (wh_map_array[j])["num"];
-      }
-      // check if enough stock for the product
-      if(total_num < buy_count){
-	std::cout<< "purchase id = " << (prod_array[i])["purid"] << "does not have sefficient stock in warehouses, failed\n";
-      }
-      // pop out untill the sum = num_buy
-      else{
-	while (sum < buy_count){
-	  std::unordered_map<std::string, int> m = pq.top();
-	  sum += m["num"];
-	  printf("%d \n", m["num"]);
-	  pq.pop();
+      // find the wharehouse number
+      std::vector<std::unordered_map<std::string, int> > wh_map_array;
+      db_get_hid(para_send->C, (prod_array[i])["pid"], wh_map_array);
+      if(wh_map_array.size() > 0){
+	for(int j = 0; j < wh_map_array.size(); j++){
+	  //printf("%d\n",(wh_map_array[j])["num"]);
+	  //put into priority queue
+	  pq.push(wh_map_array[j]);
+	  total_num += (wh_map_array[j])["num"];
 	}
+
+	// check if enough stock for the product
+	if(total_num < buy_count){
+	  std::cout<< "purchase id = " << (prod_array[i])["purid"] << "does not have sefficient stock in warehouses.\n";
+	}
+	// pop out untill the sum = num_buy
+	else{
+	  while (sum < buy_count){
+	    std::unordered_map<std::string, int> m = pq.top();
+
+	    // insert into ship_temp
+	    std::stringstream ss;
+	    std::string  s_hid, s_pid, s_num, s_cid;
+
+	    to_string(m["hid"], s_hid);
+	    s_pid = (prod_array[i])["pid"];
+	    to_string(m["num"], s_num);
+	    s_cid = (prod_array[i])["purchase_summary_id"];
+	    db_add_ship_temp(
+			     para_send->C,
+			     s_wid,
+			     s_hid,
+			     s_pid,
+			     s_num,
+			     s_cid);
+	    sum += m["num"];
+	    printf("%d \n", m["num"]);
+	    pq.pop();
+	  }
+	}// else: enough warehouse
+      }// for every warehouse
+      else{
+	std::cout<< (prod_array[i])["decrp"] << " does not exist in warehouse\n";
       }
-    }
-    else{
-      std::cout<< (prod_array[i])["decrp"] << " does not exist in warehouse\n";
-    }
-  }
-  // check warehouse number and put into ship_temp
+    }// for end
+    
+    // comb ship_temp into shipment(same purchase_id, same hid)
+    db_add_shipments(para_send->C, s_wid, purchase_id_str, wh_count);
+    
+    // create 3 thread to send APack/ ALoad/ APick for rows in shipment
+    purchase_id++;
 
-  // for shipment
-
-  // create 3 thread to send APack/ ALoad/ APick for rows in shipment
+  }// end while(true)
   pthread_exit(NULL);
 }
 
