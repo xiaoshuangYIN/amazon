@@ -22,21 +22,40 @@ public:
 typedef std::priority_queue<std::unordered_map<std::string, int>,
   std::vector<std::unordered_map<std::string, int> >,
   comp> pq_t;
-
+//
 struct _thread_send_para {
   std::string id;
   int sockfd;
   connection* C;
 };
 typedef struct _thread_send_para thread_send_para;  
-
+//
 struct _thread_recv_para {
   std::string id;
   int sockfd;
   connection* C;
 };
+typedef struct _thread_recv_para thread_recv_para;  
+//
+struct _thread_pick_para {
+  std::string id;
+  int sockfd;// UPS conected to 
+  connection* C;
+};
+typedef struct _thread_pick_para thread_pick_para;
+//
+struct _thread_pack_para {
+  std::string id;
+  connection* C;
+};
+typedef struct _thread_pack_para thread_pack_para;
+//
+struct _thread_load_para {
+  std::string id;
+  connection* C;
+};
+typedef struct _thread_load_para thread_load_para;
 
 
-typedef struct _thread_recv_para thread_recv_para;
 void* send_thread_func(void* para);
 void* recv_thread_func(void* para);

@@ -7,9 +7,17 @@ void to_string(T a, std::string& res){
   res = ss.str();
   ss.str("");
 }
-
-void* send_thread_func(void* para)
-{
+void* pack_thread_func(void* para){
+  thread_pack_para* para_pack = (thread_pack_para*)para;
+  printf("It's me, thread %s!\n", (para_pack->id).c_str());
+  pthread_exit(NULL);
+}
+void* load_thread_func(void* para){
+  thread_load_para* para_load = (thread_load_para*)para;
+  printf("It's me, thread %s!\n", (para_load->id).c_str());
+  pthread_exit(NULL);
+}
+void* send_thread_func(void* para){
   //global:
   int purchase_id = 1;
   int wh_count = 10;
@@ -68,7 +76,6 @@ void* send_thread_func(void* para)
       db_get_hid(para_send->C, (prod_array[i])["pid"], wh_map_array);
       if(wh_map_array.size() > 0){
 	for(int j = 0; j < wh_map_array.size(); j++){
-	  //printf("%d\n",(wh_map_array[j])["num"]);
 	  //put into priority queue
 	  pq.push(wh_map_array[j]);
 	  total_num += (wh_map_array[j])["num"];
@@ -112,7 +119,32 @@ void* send_thread_func(void* para)
     // comb ship_temp into shipment(same purchase_id, same hid)
     db_add_shipments(para_send->C, s_wid, purchase_id_str, wh_count);
     
+
     // create 3 thread to send APack/ ALoad/ APick for rows in shipment
+      pthread_t thread_pack;
+      pthread_t thread_load;
+      pthread_t thread_pickup;
+      int rc1, rc2, rc3;
+      //TO DO: create tread pick
+      thread_pack_para pack_para;
+      pack_para.id = std::string("pack");
+      pack_para.C = para_send->C;
+      thread_load_para load_para;
+      load_para.id = std::string("load");
+      load_para.C = para_send->C;
+      rc1 = pthread_create(&thread_pack, NULL, pack_thread_func, &pack_para);
+      if (rc1){
+	printf("ERROR; return code from pthread_create() is %d\n", rc1);
+	exit(-1);
+      }
+      rc2 = pthread_create(&thread_load, NULL, load_thread_func, &load_para);
+      if (rc2){
+	printf("ERROR; return code from pthread_create() is %d\n", rc2);
+	exit(-1);
+      }
+
+
+  // increment purchase_id(cid)
     purchase_id++;
 
   }// end while(true)
