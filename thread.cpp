@@ -1,7 +1,6 @@
 #include "thread.h"
 
 
-
 void* send_thread_func(void* para)
 {
 
@@ -86,13 +85,17 @@ void* send_thread_func(void* para)
   }
   */
 
-  // load purchase with status 0
+  // load purchase with status 0(order placed)
   std::vector<std::unordered_map<std::string, std::string> > prod_array;
   db_get_purch(para_send->C, std::string("0"), prod_array);
 
   for(int i = 0; i < prod_array.size(); i++){
     std::cout << (prod_array[i])["descrp"]<<std::endl;
     pq_t pq(comp(false));
+    int total_num = 0;
+    int sum = 0;
+    int buy_count;
+    std::stringstream((prod_array[i])["count"]) >> buy_count;
     // find the wharehouse number
     std::vector<std::unordered_map<std::string, int> > wh_map_array;
     db_get_hid(para_send->C, (prod_array[i])["pid"], wh_map_array);
@@ -102,13 +105,20 @@ void* send_thread_func(void* para)
 	printf("%d\n",(wh_map_array[j])["num"]);
 	//put into priority queue
 	pq.push(wh_map_array[j]);
-	// pop out untill the sum = num_buy
-	
+	total_num += (wh_map_array[j])["num"];
       }
-      while (!pq.empty()){
-	std::unordered_map<std::string, int> m = pq.top();
-	printf("%d \n", m["num"]);
-	pq.pop();
+      // check if enough stock for the product
+      if(total_num < buy_count){
+	std::cout<< "purchase id = " << (prod_array[i])["purid"] << "does not have sefficient stock in warehouses, failed\n";
+      }
+      // pop out untill the sum = num_buy
+      else{
+	while (sum < buy_count){
+	  std::unordered_map<std::string, int> m = pq.top();
+	  sum += m["num"];
+	  printf("%d \n", m["num"]);
+	  pq.pop();
+	}
       }
     }
     else{
