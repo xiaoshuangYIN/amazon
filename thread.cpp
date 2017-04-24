@@ -1,9 +1,12 @@
 #include "thread.h"
 
+
+
 void* send_thread_func(void* para)
 {
 
   /******* fetch from db ******/
+  /*
   // buy
   uint32_t whNum = 1;
   std::vector<std::unordered_map<std::string, std::string> > products;
@@ -77,10 +80,46 @@ void* send_thread_func(void* para)
   }
   */
   /* load */
+  /*
   if(!send_APutOnTruck(sockfd, loads)){
       printf("send APutOnTruck failed\n");
   }
-  
+  */
+
+  // load purchase with status 0
+  std::vector<std::unordered_map<std::string, std::string> > prod_array;
+  db_get_purch(para_send->C, std::string("0"), prod_array);
+
+  for(int i = 0; i < prod_array.size(); i++){
+    std::cout << (prod_array[i])["descrp"]<<std::endl;
+    pq_t pq(comp(false));
+    // find the wharehouse number
+    std::vector<std::unordered_map<std::string, int> > wh_map_array;
+    db_get_hid(para_send->C, (prod_array[i])["pid"], wh_map_array);
+    
+    if(wh_map_array.size() > 0){
+      for(int j = 0; j < wh_map_array.size(); j++){
+	printf("%d\n",(wh_map_array[j])["num"]);
+	//put into priority queue
+	pq.push(wh_map_array[j]);
+	// pop out untill the sum = num_buy
+	
+      }
+      while (!pq.empty()){
+	std::unordered_map<std::string, int> m = pq.top();
+	printf("%d \n", m["num"]);
+	pq.pop();
+      }
+    }
+    else{
+      std::cout<< (prod_array[i])["decrp"] << " does not exist in warehouse\n";
+    }
+  }
+  // check warehouse number and put into ship_temp
+
+  // for shipment
+
+  // create 3 thread to send APack/ ALoad/ APick for rows in shipment
   pthread_exit(NULL);
 }
 

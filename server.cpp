@@ -2,6 +2,7 @@
 #include "thread.h"
 #include "msg.h"
 
+
 #include <unistd.h>
 #include <sys/types.h>
 #include <string>
@@ -12,14 +13,18 @@
 #include <pthread.h>
 #include <stdio.h>
 
+
 const char* sim_IP = "10.236.48.17";
 const char* PORT = "23456";
 
 
 int main(int argc, char* argv[]){
 
-  /*  connect socket to sim */
+  /* connect to database */
+  connection* C = create_connection();
 
+
+  /*  connect socket to sim */
   int sockfd, numbytes;  
   struct addrinfo hints, *servinfo, *p;
   int rv;
@@ -28,8 +33,8 @@ int main(int argc, char* argv[]){
   get_addr_info(&hints, &servinfo, &rv, PORT, sim_IP);  
   connect_sock(&servinfo, sockfd,  s);
 
-  /* Aconnect and Aconnected with sim*/
 
+  /* Aconnect and Aconnected with sim*/
   uint64_t worldid = 1049;// recv from UPS
   if(!send_AConnect_recv_AConnected(worldid, sockfd)){
     printf("send AConnect receive AConnected failed\n");
@@ -42,19 +47,20 @@ int main(int argc, char* argv[]){
     printf("speed up fail\n");
   }
   */
-
   
-  /* create two thrads*/
+  /* create two thrads */
   pthread_t thread_send;
   pthread_t thread_recv;
   int rc1, rc2;
   thread_send_para send_para;
   send_para.id = std::string("send");
   send_para.sockfd = sockfd;
+  send_para.C = C;
   thread_recv_para recv_para;
   recv_para.id = std::string("recv");
   recv_para.sockfd = sockfd;
-
+  recv_para.C = C;
+  
   rc1 = pthread_create(&thread_send, NULL, send_thread_func, &send_para);
   if (rc1){
     printf("ERROR; return code from pthread_create() is %d\n", rc1);

@@ -1,0 +1,53 @@
+/* database name: amazon_db */
+
+/* django */
+/*DROP TABLE Product;
+DROP TABLE CardPayment;
+DROP TABLE Profile;
+DROP TABLE GiftcardCode;
+*/
+
+/* amazon server */
+DROP TABLE Warehouse;
+DROP TABLE Whstock;
+DROP TABLE Whready;
+DROP TABLE Shipments;
+DROP TABLE Purchased_Product;
+/* create tables */
+CREATE TABLE Purchased_Product (
+       cid int8,
+       pid int8,
+       des text,  
+       num_buy int8,
+       ship bool,
+       status int2
+);
+
+CREATE TABLE Whstock (
+        wid int8,
+   	hid int4,
+   	pid int8,
+   	descr text,
+   	num int8,
+   	CONSTRAINT whpkey PRIMARY KEY (wid,hid,pid)
+);
+ 
+CREATE TABLE Ship_temp (
+       wid int8,
+       hid int4,
+       pid int8,
+       num_buy int4,
+       cid int8,
+       tid int8
+);
+
+CREATE TABLE shipment (
+       wid int8,
+       hid int4,
+       sid int4,
+       a_tid int8[],
+       cid int8,
+       status_detail text
+);
+
+
