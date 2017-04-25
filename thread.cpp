@@ -144,41 +144,32 @@ void* send_thread_func(void* para){
       else{
 	std::cout<< (prod_array[i])["decrp"] << " does not exist in warehouse\n";
       }
-    }// for end
+    }// for(products in one shipment) end
     
     // comb ship_temp into shipment(same purchase_id, same hid)
-    db_add_shipments(para_send->C, s_wid, purchase_id_str, wh_count);
+    std::vector<std::unordered_map<std::string, int> > ship_maps;
+    std::vector<std::vector<std::unordered_map<std::string, std::string> > >prod_maps;
+    db_add_shipments(para_send->C, s_wid, purchase_id_str, wh_count, ship_maps, prod_maps);
     
-
-    // create 3 thread to send APack/ ALoad/ APick for rows in shipment
-    /*
-    pthread_t thread_pack;
-      pthread_t thread_load;
-      pthread_t thread_pickup;
-      int rc1, rc2, rc3;
-      //TO DO: create tread pick
-      thread_pack_para pack_para;
-      pack_para.id = std::string("pack");
-      pack_para.C = para_send->C;
-      pack_para.sockfd = para_send->sockfd;
-      thread_load_para load_para;
-      load_para.id = std::string("load");
-      load_para.C = para_send->C;
-      load_para.sockfd = para_send->sockfd;
-      
-      rc1 = pthread_create(&thread_pack, NULL, pack_thread_func, &pack_para);
-      if (rc1){
-	printf("ERROR; return code from pthread_create() is %d\n", rc1);
-	exit(-1);
+    // send Apack to sim
+    for(int i = 0; i < ship_maps.size(); i++){
+      printf("to pack: hid = %d\n", (ship_maps[i])["hid"]);
+      printf("to pack: sid = %d\n", (ship_maps[i])["sid"]);
+      for(int j = 0; j <prod_maps[i].size(); j++){
+	std::cout<<"  pid = " << (prod_maps[i][j])["pid"] << std::endl;
+	std::cout<<"  desc = " << (prod_maps[i][j])["desc"] << std::endl;
+	std::cout<<"  count = " << (prod_maps[i][j])["count"] << std::endl;
       }
-      rc2 = pthread_create(&thread_load, NULL, load_thread_func, &load_para);
-      if (rc2){
-	printf("ERROR; return code from pthread_create() is %d\n", rc2);
-	exit(-1);
+      /*
+      if(!send_APack((ship_maps[i])["hid"], (ship_maps[i])["sid"] , prod_maps[i], para_send->sockfd)){
+	printf("send APack failed\n");
       }
-    */
+      */
+    }
+    
+    // send Apick to UPS
 
-  // increment purchase_id(cid)
+    // increment purchase_id(cid)
     purchase_id++;
     sleep(5);
   }// end while(true)

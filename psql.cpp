@@ -173,7 +173,97 @@ bool db_add_ship(connection* C, std::string wid, std::string hid, std::string ci
   return true;
 }
 
-void db_add_shipments(connection* C, std::string wid, std::string cid, int wh_count){
+void parse_str(std::string tid_list, std::vector<std::string>& tid_vector){
+  std::istringstream ss(tid_list);
+  std::string token;
+
+  while(std::getline(ss, token, ',')) {
+    tid_vector.push_back(token);
+  }
+}
+
+std::string db_get_pid_by_tid(connection* C, std::string tid){
+  std::string pid("");
+  try{
+    std::string init_retrv( "SELECT pid FROM ship_temp WHERE tid= ");
+    std::string post(";");
+    std::string retrv_q = init_retrv + tid + post;
+    work W(*C);
+    //nontransaction N(*C);
+    result R(W.exec(retrv_q));
+    W.commit();
+    for(result::const_iterator c = R.begin(); c != R.end(); ++c){
+      pid = c[0].as<std::string>();
+    }
+    return pid;
+    
+  }catch(const std::exception & e){
+    std::cerr << e.what() << std::endl;
+    return pid;
+  }
+}
+// TO DO
+/*
+product_id | description | count 
+*/
+void db_get_prod_by_pid(connection* C, std::string pid, std::unordered_map<std::string, std::string>& map){
+  try{
+    std::string init_retrv( "SELECT product_id, description, count FROM account_product WHERE product_id = ");
+
+    std::string post(";");
+    std::string retrv_q = init_retrv + pid + post;
+    work W(*C);
+    //nontransaction N(*C);
+    result R(W.exec(retrv_q));
+    W.commit();
+    for(result::const_iterator c = R.begin(); c != R.end(); ++c){
+      map["pid"] = c[0].as<std::string>();
+      map["desc"] = c[1].as<std::string>();
+      map["count"] = c[2].as<std::string>();
+    }
+  }catch(const std::exception & e){
+    std::cerr << e.what() << std::endl;
+  }
+}
+
+void db_get_prod_by_tid(connection* C, std::string tid , std::unordered_map<std::string, std::string>& prod){
+  std::string  pid = db_get_pid_by_tid(C, tid);
+  db_get_prod_by_pid(C, pid, prod);
+}
+
+void db_get_prods_by_tids(connection* C, std::string tid_list, std::vector<std::unordered_map<std::string, std::string> >& prods){
+  std::vector<std::string> tid_vector;
+  parse_str(tid_list, tid_vector);
+  
+  for(int i = 0; i < tid_vector.size(); i++){
+    std::unordered_map<std::string, std::string> prod;
+    db_get_prod_by_tid(C, tid_vector[i], prod);
+    prods.push_back(prod);
+  }
+}
+
+void db_get_ships_by_hidcid(connection* C, std::string hid, std::string cid, std::unordered_map<std::string, int>& ship){
+  try{
+    std::string init_retrv( "SELECT hid, sid FROM shipment WHERE ");
+    std::string hids("hid = ");
+    std::string cids("cid = ");
+    std::string AND(" AND ");
+    std::string post(";");
+    std::string retrv_q = init_retrv + hids + hid + AND + cids + cid + post;
+    work W(*C);
+    //nontransaction N(*C);
+    result R(W.exec(retrv_q));
+    W.commit();
+    for(result::const_iterator c = R.begin(); c != R.end(); ++c){
+      ship["hid"] = c[0].as<int>();
+      ship["sid"] = c[1].as<int>();
+    }
+  }catch(const std::exception & e){
+    std::cerr << e.what() << std::endl;
+  }
+}
+
+void db_add_shipments(connection* C, std::string wid, std::string cid, int wh_count, std::vector<std::unordered_map<std::string, int> >& ship_maps, std::vector<std::vector<std::unordered_map<std::string, std::string> > > & prod_maps){
   for(int i = 1; i <= wh_count; i++){
       std::stringstream ss;
       ss << i;
@@ -184,6 +274,14 @@ void db_add_shipments(connection* C, std::string wid, std::string cid, int wh_co
 	get_tids_by_same_hid_cid(C, hid, cid);
       if(tid_list != std::string("")){
 	db_add_ship(C, wid, hid, cid, tid_list);
+	// get products info
+	std::vector<std::unordered_map<std::string, std::string> > prods;
+	db_get_prods_by_tids(C, tid_list, prods);
+	prod_maps.push_back(prods);
+	// get whnum,shipid
+	std::unordered_map<std::string, int> ship;
+	db_get_ships_by_hidcid(C, hid, cid, ship);
+	ship_maps.push_back(ship);
       }
   }
   return;
@@ -219,7 +317,6 @@ connection* C,
       tid_list = c[1].as<std::string>();
       std::cout<<"tid_list = " << tid_list << std::endl;
       shipid = c[2].as<int>();
-      //db_get_prods_by_tid(C, prods, c[1].as<>);
     }
     if(R.begin() != R.end()){
       return true;
@@ -262,6 +359,61 @@ int db_check_stock_exist(connection* C, std::string wid, std::string hid, std::s
   }
   return 1;
 }
+int db_check_prod_exist(connection* C, std::string pid){
+  try{
+    std::string init = "SELECT EXISTS (SELECT product_id  FROM account_product WHERE ";
+    std::string post = ");";
+    std::string pids = "product_id = ";
+    std::string retrieve_q = init + pids + pid + post;
+
+    nontransaction N(*C);
+    result R(N.exec(retrieve_q));
+    bool res;
+    for(result::const_iterator c = R.begin(); c != R.end(); ++c){
+      res = c[0].as<bool>();
+      if(res == true){
+	return 1;
+      }
+      else if(res == false){
+	return 0;
+      }
+    }
+  }catch(const std::exception & e){
+    std::cerr << e.what() << std::endl;
+    return 0;
+  }
+  return 1;
+}
+
+void db_update_actprod(connection* C, std::string pid, std::string num){
+  try{
+    std::string pre ("UPDATE ");
+    std::string table (" account_product ");
+    std::string set (" SET" );
+    std::string counts(" count = ");
+    std::string post(";");
+    std::string comma (",");
+    std::string empty(" '' ");
+    std::string qleft("'");
+    std::string qright("'");
+    std::string where(" WHERE ");
+    std::string AND(" AND ");
+    std::string pids(" product_id = ");
+    std::string  update_q = pre + table + set
+      + counts + num
+      + where
+      + pids + pid
+      + post;
+    std::cout << "update:" << update_q << std::endl;
+    work W(*C);
+    W.exec(update_q);
+    W.commit();
+  }
+  catch(const std::exception & e){
+    std::cerr << e.what() << std::endl;
+  } 
+}
+
 /*
  wid  | hid | pid |   descr    | num 
 */
@@ -269,7 +421,6 @@ bool db_add_stock(connection* C,std::string wid, std::string whnum, std::string 
   int exist = db_check_stock_exist(C, wid, whnum, pid);
 
   if(exist == 1){
-    std::cout<< "exist!!!!!!!\n";
     try{
       std::string pre ("UPDATE ");
       std::string table (" whstock ");
@@ -296,6 +447,14 @@ bool db_add_stock(connection* C,std::string wid, std::string whnum, std::string 
       work W(*C);
       W.exec(update_q);
       W.commit();
+
+      // upadte account_product
+      if(db_check_prod_exist(C, pid) == 1){
+	db_update_actprod(C, pid, num);
+      }
+      else{
+	std::cerr<<"whstock and account_product not match\n";
+      }
       return true;
     }
     catch(const std::exception & e){

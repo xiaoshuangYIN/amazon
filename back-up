@@ -1,0 +1,27 @@
+    // create 3 thread to send APack/ ALoad/ APick for rows in shipment
+    /*
+    pthread_t thread_pack;
+      pthread_t thread_load;
+      pthread_t thread_pickup;
+      int rc1, rc2, rc3;
+      //TO DO: create tread pick
+      thread_pack_para pack_para;
+      pack_para.id = std::string("pack");
+      pack_para.C = para_send->C;
+      pack_para.sockfd = para_send->sockfd;
+      thread_load_para load_para;
+      load_para.id = std::string("load");
+      load_para.C = para_send->C;
+      load_para.sockfd = para_send->sockfd;
+      
+      rc1 = pthread_create(&thread_pack, NULL, pack_thread_func, &pack_para);
+      if (rc1){
+	printf("ERROR; return code from pthread_create() is %d\n", rc1);
+	exit(-1);
+      }
+      rc2 = pthread_create(&thread_load, NULL, load_thread_func, &load_para);
+      if (rc2){
+	printf("ERROR; return code from pthread_create() is %d\n", rc2);
+	exit(-1);
+      }
+    */

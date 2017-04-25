@@ -21,7 +21,7 @@ typedef struct _load load;
 template<typename T> bool sendMesgTo(const T & , google::protobuf::io::FileOutputStream *);
 template<typename T> bool recvMesgFrom(T & , google::protobuf::io::FileInputStream * );
 bool send_AConnect(uint64_t , int);
-bool send_APack(uint32_t , uint64_t , std::vector<std::unordered_map<std::string, std::string> >& , int );
+bool send_APack(uint32_t whnum, uint64_t shipId, std::vector<std::unordered_map<std::string, std::string> >& prods, int sockfd );
 bool send_APurchaseMore(uint32_t , std::vector<std::unordered_map<std::string, std::string> > &, int );
 bool send_simspeed(uint32_t speed, int sockfd);
 bool send_AConnect_recv_AConnected(uint64_t worldid, int sockfd);
