@@ -116,9 +116,9 @@ bool send_APack(uint32_t whNum, uint64_t shipId, std::vector<std::unordered_map<
   uint32_t count = 0;
   for(int i = 0; i < products.size(); i++){
     prod = pack->add_things();
-    std::stringstream((products[i])["id"]) >> id;
+    std::stringstream((products[i])["pid"]) >> id;
     std::stringstream((products[i])["count"]) >> count;
-    prod->set_description((products[i])["description"]);
+    prod->set_description((products[i])["desc"]);
     prod->set_count(count);
     prod->set_id(id);
   }

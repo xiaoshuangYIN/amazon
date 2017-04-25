@@ -153,18 +153,9 @@ void* send_thread_func(void* para){
     
     // send Apack to sim
     for(int i = 0; i < ship_maps.size(); i++){
-      printf("to pack: hid = %d\n", (ship_maps[i])["hid"]);
-      printf("to pack: sid = %d\n", (ship_maps[i])["sid"]);
-      for(int j = 0; j <prod_maps[i].size(); j++){
-	std::cout<<"  pid = " << (prod_maps[i][j])["pid"] << std::endl;
-	std::cout<<"  desc = " << (prod_maps[i][j])["desc"] << std::endl;
-	std::cout<<"  count = " << (prod_maps[i][j])["count"] << std::endl;
-      }
-      /*
       if(!send_APack((ship_maps[i])["hid"], (ship_maps[i])["sid"] , prod_maps[i], para_send->sockfd)){
 	printf("send APack failed\n");
       }
-      */
     }
     
     // send Apick to UPS
