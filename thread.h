@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <queue>
 #include <functional> 
+#include <unistd.h>
 #include "msg.h"
 #include "psql.h"
 
@@ -47,15 +48,18 @@ typedef struct _thread_pick_para thread_pick_para;
 struct _thread_pack_para {
   std::string id;
   connection* C;
+  int sockfd;
 };
 typedef struct _thread_pack_para thread_pack_para;
 //
 struct _thread_load_para {
   std::string id;
   connection* C;
+  int sockfd;
 };
 typedef struct _thread_load_para thread_load_para;
 
-
+void* pack_thread_func(void* para);
+void* load_thread_func(void* para);
 void* send_thread_func(void* para);
 void* recv_thread_func(void* para);

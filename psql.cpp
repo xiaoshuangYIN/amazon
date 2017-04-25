@@ -26,8 +26,10 @@ bool db_get_purch(connection* C, std::string status, std::string purchase_id, st
     std::string AND(" AND ");
     std::string mid(" purchase_summary_id  = ");
     std::string retrv_q = init_retrv  + status + AND + mid + purchase_id + post;
-    nontransaction N(*C);
-    result R(N.exec(retrv_q));
+    work W(*C);
+    //nontransaction N(*C);
+    result R(W.exec(retrv_q));
+    W.commit();
     std::unordered_map<std::string, std::string> map;
     for(result::const_iterator c = R.begin(); c != R.end(); ++c){
       map["purchase_summary_id"] = c[9].as<std::string>();
@@ -56,9 +58,10 @@ void db_get_hid(connection* C, std::string pid, std::vector<std::unordered_map<s
     std::string init_retrv = "SELECT hid, num FROM whstock  WHERE pid= ";
     std::string post(";");
     std::string retrv_q = init_retrv  + pid + post;
-    nontransaction N(*C);
-    result R(N.exec(retrv_q));
-
+    work W(*C);
+    //nontransaction N(*C);
+    result R(W.exec(retrv_q));
+    W.commit();
     
     for(result::const_iterator c = R.begin(); c != R.end(); ++c){
       std::unordered_map<std::string, int> map;
@@ -112,8 +115,10 @@ std::string get_tids_by_same_hid_cid(connection* C, std::string hid, std::string
     std::string post(";");
     std::string comma(",");
     std::string retrv_q = init_retrv + hid + AND + mid + cid + post;
-    nontransaction N(*C);
-    result R(N.exec(retrv_q));
+    work W(*C);
+    //nontransaction N(*C);
+    result R(W.exec(retrv_q));
+    W.commit();
     std::cout<<"test: tid = ";
     for(result::const_iterator c = R.begin(); c != R.end(); ++c){
       tid_list += c[0].as<std::string>();
@@ -132,7 +137,6 @@ std::string get_tids_by_same_hid_cid(connection* C, std::string hid, std::string
   }
 }
 /*
-wid | hid | cid | status_detail | track_num | tid_list | sid
  wid | hid | cid | status_detail | track_num | tid_list | sid 
 -----+-----+-----+---------------+-----------+----------+----- 
 */
@@ -183,4 +187,149 @@ void db_add_shipments(connection* C, std::string wid, std::string cid, int wh_co
       }
   }
   return;
+}
+/*
+ wid  | hid | cid | status_detail | track_num |         tid_list          | sid 
+ */
+bool db_get_ship_topack(
+connection* C,
+  std::string sid,
+  std::string status,
+  uint32_t& whnum,
+  std::vector<std::unordered_map<std::string, std::string> >&prods,
+  uint64_t& shipid){
+  
+  try{
+    std::string init_retrv = "SELECT hid, tid_list, sid FROM shipment WHERE sid= ";
+    std::string post(";");
+    std::string AND(" AND ");
+    std::string space(" ");
+    std::string mid(" status_detail = ");
+    std::string retrv_q = init_retrv + sid + AND + mid + status + post;
+    work W(*C);
+    //W_create.exec(retrv_q);
+    
+
+    //nontransaction N(*C);
+    result R(W.exec(retrv_q));
+    W.commit();
+    std::string tid_list;
+    for(result::const_iterator c = R.begin(); c != R.end(); ++c){
+      whnum = c[0].as<int>();
+      tid_list = c[1].as<std::string>();
+      std::cout<<"tid_list = " << tid_list << std::endl;
+      shipid = c[2].as<int>();
+      //db_get_prods_by_tid(C, prods, c[1].as<>);
+    }
+    if(R.begin() != R.end()){
+      return true;
+    }
+    else{
+      return false;
+    }
+  }
+  catch(const std::exception & e){
+    std::cerr << e.what() << std::endl;
+    return false;
+  }
+}
+
+int db_check_stock_exist(connection* C, std::string wid, std::string hid, std::string pid){
+  try{
+    std::string init = "SELECT EXISTS (SELECT wid, hid, pid  FROM whstock WHERE ";
+    std::string post = ");";
+    std::string wids = "wid = ";
+    std::string hids = "hid = ";
+    std::string pids = "pid = ";
+    std::string AND = " AND ";
+    std::string retrieve_q = init + wids + wid + AND + hids + hid + AND + pids + pid + post;
+
+    nontransaction N(*C);
+    result R(N.exec(retrieve_q));
+    bool res;
+    for(result::const_iterator c = R.begin(); c != R.end(); ++c){
+      res = c[0].as<bool>();
+      if(res == true){
+	return 1;
+      }
+      else if(res == false){
+	return 0;
+      }
+    }
+  }catch(const std::exception & e){
+    std::cerr << e.what() << std::endl;
+    return 0;
+  }
+  return 1;
+}
+/*
+ wid  | hid | pid |   descr    | num 
+*/
+bool db_add_stock(connection* C,std::string wid, std::string whnum, std::string pid, std::string num, std::string descr){
+  int exist = db_check_stock_exist(C, wid, whnum, pid);
+
+  if(exist == 1){
+    std::cout<< "exist!!!!!!!\n";
+    try{
+      std::string pre ("UPDATE ");
+      std::string table (" whstock ");
+      std::string set (" SET" );
+      std::string nums(" num = ");
+      std::string post(";");
+      std::string comma (",");
+      std::string empty(" '' ");
+      std::string qleft("'");
+      std::string qright("'");
+      std::string where(" WHERE ");
+      std::string wids(" wid = ");
+      std::string AND(" AND ");
+      std::string hids(" hid = ");
+      std::string pids(" pid = ");
+      std::string  update_q = pre + table + set
+	+ nums + num
+	+ where
+	+ wids + wid
+	+ AND + hids + whnum
+	+ AND + pids + pid
+	+ post;
+      std::cout << "update:" << update_q << std::endl;
+      work W(*C);
+      W.exec(update_q);
+      W.commit();
+      return true;
+    }
+    catch(const std::exception & e){
+      std::cerr << e.what() << std::endl;
+      return false;
+    } 
+  }
+  else{
+    try{
+      std::string pre ("INSERT INTO ");
+      std::string table (" whstock ");
+      std::string mid ("VALUES (" );
+      std::string post(");");
+      std::string comma (",");
+      std::string insert_q("");
+      std::string empty(" '' ");
+      std::string qleft("'");
+      std::string qright("'");
+      insert_q = pre + table + mid
+	+ wid + comma
+	+ whnum + comma
+	+ pid + comma 
+	+ qleft + descr + qright + comma
+	+ num 
+	+ post;
+      std::cout << "insert:" << insert_q << std::endl;
+      work W_create(*C);
+      W_create.exec(insert_q);
+      W_create.commit();
+      return true;
+    }
+    catch(const std::exception & e){
+      std::cerr << e.what() << std::endl;
+      return false;
+    }
+  }
 }

@@ -22,3 +22,12 @@ bool db_add_ship_temp(connection* C, std::string wid, std::string hid, std::stri
 std::string get_tids_by_same_hid_cid(connection* C, std::string hid, std::string cid);
 void db_add_shipments(connection* C, std::string wid, std::string cid, int wh_count);
 bool db_add_ship(connection* C, std::string wid,std::string hid, std::string cid, std::string tid_list);
+bool  db_get_ship_topack(connection* C, int sockfd, std::string sid, std::string status, uint32_t& whnum, std::vector<std::unordered_map<std::string, std::string> >&prods, uint64_t& shipid);
+bool db_get_ship_topack(
+connection* C,
+  std::string sid,
+  std::string status,
+  uint32_t& whnum,
+  std::vector<std::unordered_map<std::string, std::string> >&prods,
+uint64_t& shipid);
+bool db_add_stock(connection* C,std::string wid, std::string whnum, std::string pid, std::string num, std::string descr);
