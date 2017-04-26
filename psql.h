@@ -34,8 +34,9 @@ connection* C,
   std::vector<std::unordered_map<std::string, std::string> >&prods,
 uint64_t& shipid);
 
-bool db_add_stock(connection* C,std::string wid, std::string whnum, std::string pid, std::string num, std::string descr);
+bool db_add_stock(connection* C,std::string wid, std::string whnum, std::string pid, int  num, std::string descr);
 
 
 void db_add_shipments(connection* C, std::string wid, std::string cid, int wh_count, std::vector<std::unordered_map<std::string, int> >& ship_maps, std::vector<std::vector<std::unordered_map<std::string, std::string> > >& prod_maps);
 
+bool  db_get_prods_by_wid(connection* C, std::string wid, std::vector<std::unordered_map<std::string, std::string> >& prods);

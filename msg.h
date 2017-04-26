@@ -25,5 +25,5 @@ bool send_APack(uint32_t whnum, uint64_t shipId, std::vector<std::unordered_map<
 bool send_APurchaseMore(uint32_t , std::vector<std::unordered_map<std::string, std::string> > &, int );
 bool send_simspeed(uint32_t speed, int sockfd);
 bool send_AConnect_recv_AConnected(uint64_t worldid, int sockfd);
-void recv_AResponse(int sockfd, AResponses& res);
+bool recv_AResponse(int sockfd, AResponses& res);
 bool send_APutOnTruck(int sockfd, std::vector<std::unordered_map<std::string, std::string> > loads);

@@ -51,14 +51,16 @@ template<typename T> bool recvMesgFrom(T & message,
   return true;
 }
 
-void recv_AResponse(int sockfd, AResponses& res){
+bool recv_AResponse(int sockfd, AResponses& res){
   /* receive */
   google::protobuf::io::FileInputStream * infile = new google::protobuf::io::FileInputStream(sockfd);
   if (!recvMesgFrom(res, infile)){
     std::cerr<<"amazon server: AResponse fail to recv\n";
+    return false;
   }
   /* test AConnected */
   printf("rec from sim: %s\n", res.DebugString().c_str());
+  return true;
 }
 
 bool send_AConnect(uint64_t worldid, int sockfd){
@@ -105,7 +107,6 @@ bool send_AConnect_recv_AConnected(uint64_t worldid, int sockfd){
 
 bool send_APack(uint32_t whNum, uint64_t shipId, std::vector<std::unordered_map<std::string, std::string> > &products, int sockfd){
   /* Acommands(APack) */
-
   ACommands comd;
   APack* pack = comd.add_topack();
   pack->set_whnum(whNum);
@@ -150,7 +151,7 @@ bool send_APurchaseMore(uint32_t whNum, std::vector<std::unordered_map<std::stri
     prod->set_count(count);
     prod->set_id(id);
   }
-  std::cout<<comd.DebugString()<<"\n";
+  //std::cout<<comd.DebugString()<<"\n";
 
   /* send ACommand(APack) */
   google::protobuf::io::FileOutputStream * outfile = new google::protobuf::io::FileOutputStream(sockfd);
@@ -194,7 +195,7 @@ bool send_APutOnTruck(int sockfd, std::vector<std::unordered_map<std::string, st
     load->set_shipid(shipId);
     load->set_truckid(truckId);
   }
-  std::cout<<comd.DebugString()<<"\n";
+  //std::cout<<comd.DebugString()<<"\n";
 
   /* send ACommand(APack) */
   google::protobuf::io::FileOutputStream * outfile = new google::protobuf::io::FileOutputStream(sockfd);

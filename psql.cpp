@@ -1,4 +1,11 @@
 #include "psql.h"
+template <class T>
+void To_string(T a, std::string& res){
+  std::stringstream ss;
+  ss << a;
+  res = ss.str();
+  ss.str("");
+}
 
 connection* create_connection(){
   try{
@@ -40,10 +47,8 @@ bool db_get_purch(connection* C, std::string status, std::string purchase_id, st
       map_array.push_back(map);
     }
     if(map_array.size() == 0){
-      //std::cout<<"no rows found : db_get_purch\n";
       return false;
     }
-    std::cout<<"rows found\n";
     return true;
   }catch(const std::exception & e){
     std::cerr << e.what() << std::endl;
@@ -90,7 +95,6 @@ bool db_add_ship_temp(connection* C, std::string wid, std::string hid, std::stri
       + num_buy + comma
       + cid 
       + post;;
-    std::cout << "insert:" << insert_q << std::endl;
     work W_create(*C);
     W_create.exec(insert_q);
     W_create.commit();
@@ -119,15 +123,13 @@ std::string get_tids_by_same_hid_cid(connection* C, std::string hid, std::string
     //nontransaction N(*C);
     result R(W.exec(retrv_q));
     W.commit();
-    std::cout<<"test: tid = ";
-    for(result::const_iterator c = R.begin(); c != R.end(); ++c){
+   for(result::const_iterator c = R.begin(); c != R.end(); ++c){
       tid_list += c[0].as<std::string>();
       tid_list += comma;
     }
     if(tid_list != empty){
       tid_list.pop_back();
     }
-    std::cout<<tid_list<<std::endl;
     return tid_list;
     
   }catch(const std::exception & e){
@@ -162,7 +164,7 @@ bool db_add_ship(connection* C, std::string wid, std::string hid, std::string ci
       + empty + comma
       + left + tid_list + right 
       + post;
-    std::cout << "insert:" << insert_q << std::endl;
+    // std::cout << "insert:" << insert_q << std::endl;
     work W_create(*C);
     W_create.exec(insert_q);
     W_create.commit();
@@ -268,7 +270,6 @@ void db_add_shipments(connection* C, std::string wid, std::string cid, int wh_co
       std::stringstream ss;
       ss << i;
       std::string hid = ss.str();
-      std::cout<<"test: hid = "<<hid<<std::endl;
       ss.str("");
       std::string tid_list =
 	get_tids_by_same_hid_cid(C, hid, cid);
@@ -315,7 +316,6 @@ connection* C,
     for(result::const_iterator c = R.begin(); c != R.end(); ++c){
       whnum = c[0].as<int>();
       tid_list = c[1].as<std::string>();
-      std::cout<<"tid_list = " << tid_list << std::endl;
       shipid = c[2].as<int>();
     }
     if(R.begin() != R.end()){
@@ -359,30 +359,47 @@ int db_check_stock_exist(connection* C, std::string wid, std::string hid, std::s
   }
   return 1;
 }
-int db_check_prod_exist(connection* C, std::string pid){
+int db_check_stock(connection* C, std::string wid, std::string hid, std::string pid){
   try{
-    std::string init = "SELECT EXISTS (SELECT product_id  FROM account_product WHERE ";
+    std::string init = "SELECT num FROM whstock WHERE ";
+    std::string post = ");";
+    std::string wids = "wid = ";
+    std::string hids = "hid = ";
+    std::string pids = "pid = ";
+    std::string AND = " AND ";
+    std::string retrieve_q = init + wids + wid + AND + hids + hid + AND + pids + pid + post;
+
+    nontransaction N(*C);
+    result R(N.exec(retrieve_q));
+    int res = 0;
+    for(result::const_iterator c = R.begin(); c != R.end(); ++c){
+      res = c[0].as<int>();
+    }
+    return res;
+  }catch(const std::exception & e){
+    std::cerr << e.what() << std::endl;
+    return -1;
+  }
+}
+
+int db_check_prod(connection* C, std::string pid){
+  try{
+    std::string init = "SELECT count  FROM account_product WHERE ";
     std::string post = ");";
     std::string pids = "product_id = ";
     std::string retrieve_q = init + pids + pid + post;
 
     nontransaction N(*C);
     result R(N.exec(retrieve_q));
-    bool res;
+    int res = 0;
     for(result::const_iterator c = R.begin(); c != R.end(); ++c){
-      res = c[0].as<bool>();
-      if(res == true){
-	return 1;
-      }
-      else if(res == false){
-	return 0;
-      }
+      res = c[0].as<int>();
     }
+    return res;
   }catch(const std::exception & e){
     std::cerr << e.what() << std::endl;
-    return 0;
+    return -1;
   }
-  return 1;
 }
 
 void db_update_actprod(connection* C, std::string pid, std::string num){
@@ -404,7 +421,6 @@ void db_update_actprod(connection* C, std::string pid, std::string num){
       + where
       + pids + pid
       + post;
-    std::cout << "update:" << update_q << std::endl;
     work W(*C);
     W.exec(update_q);
     W.commit();
@@ -415,13 +431,54 @@ void db_update_actprod(connection* C, std::string pid, std::string num){
 }
 
 /*
+id | product_id | description | count | price | num_of_ratings | stars 
+*/
+bool db_add_act_prod(connection* C, std::string num, std::string pid, std::string descr){
+    try{
+
+      
+      std::string pre ("INSERT INTO ");
+      std::string table (" account_product ");
+      std::string mid ("VALUES (" );
+      std::string post(");");
+      std::string comma (",");
+      std::string insert_q("");
+      std::string empty(" '' ");
+      std::string qleft("'");
+      std::string qright("'");
+      std::string price("5");
+      insert_q = pre + table + mid
+	+ empty + comma
+	+ pid + comma
+	+ qleft + descr + qright + comma
+	+ num + comma
+	+ price + comma
+	+ empty + comma
+	+ empty + comma
+	+ post;
+      work W_create(*C);
+      W_create.exec(insert_q);
+      W_create.commit();
+      return true;
+    }
+    catch(const std::exception & e){
+      std::cerr << e.what() << std::endl;
+      return false;
+    }
+}
+
+
+/*
  wid  | hid | pid |   descr    | num 
 */
-bool db_add_stock(connection* C,std::string wid, std::string whnum, std::string pid, std::string num, std::string descr){
-  int exist = db_check_stock_exist(C, wid, whnum, pid);
-
-  if(exist == 1){
+bool db_add_stock(connection* C,std::string wid, std::string whnum, std::string pid, int num, std::string descr){
+  int num_stock = db_check_stock(C, wid, whnum, pid);
+  
+  if(num_stock > -1){
     try{
+      std::string new_num ;
+      To_string(num_stock + num, new_num);
+      
       std::string pre ("UPDATE ");
       std::string table (" whstock ");
       std::string set (" SET" );
@@ -437,20 +494,20 @@ bool db_add_stock(connection* C,std::string wid, std::string whnum, std::string 
       std::string hids(" hid = ");
       std::string pids(" pid = ");
       std::string  update_q = pre + table + set
-	+ nums + num
+	+ nums + new_num
 	+ where
 	+ wids + wid
 	+ AND + hids + whnum
 	+ AND + pids + pid
 	+ post;
-      std::cout << "update:" << update_q << std::endl;
       work W(*C);
       W.exec(update_q);
       W.commit();
 
       // upadte account_product
-      if(db_check_prod_exist(C, pid) == 1){
-	db_update_actprod(C, pid, num);
+      int num_act = db_check_prod(C, pid);
+      if(num_act == num_stock){
+	db_update_actprod(C, pid, new_num);
       }
       else{
 	std::cerr<<"whstock and account_product not match\n";
@@ -464,6 +521,9 @@ bool db_add_stock(connection* C,std::string wid, std::string whnum, std::string 
   }
   else{
     try{
+      std::string new_num ;
+      To_string( num, new_num);
+      
       std::string pre ("INSERT INTO ");
       std::string table (" whstock ");
       std::string mid ("VALUES (" );
@@ -478,17 +538,46 @@ bool db_add_stock(connection* C,std::string wid, std::string whnum, std::string 
 	+ whnum + comma
 	+ pid + comma 
 	+ qleft + descr + qright + comma
-	+ num 
+	+ new_num 
 	+ post;
-      std::cout << "insert:" << insert_q << std::endl;
       work W_create(*C);
       W_create.exec(insert_q);
       W_create.commit();
+      db_add_act_prod(C, new_num, pid ,descr);
       return true;
     }
     catch(const std::exception & e){
       std::cerr << e.what() << std::endl;
       return false;
     }
+  }
+}
+/*
+wid  | hid | pid |   descr    | num
+*/
+bool  db_get_prods_by_wid(connection* C, std::string hid, std::vector<std::unordered_map<std::string, std::string> >& prods){
+  try{
+    
+    std::string init_retrv = "SELECT pid, descr, num  FROM stock_to_add WHERE hid= ";
+    std::string post(";");
+    std::string retrv_q = init_retrv  + hid + post;
+    work W(*C);
+    //nontransaction N(*C);
+    result R(W.exec(retrv_q));
+    W.commit();
+    std::unordered_map<std::string, std::string> map;
+    for(result::const_iterator c = R.begin(); c != R.end(); ++c){
+      map["id"] = c[0].as<std::string>();
+      map["description"] = c[1].as<std::string>();
+      map["count"] = c[2].as<std::string>();
+      prods.push_back(map);
+    }
+    if(prods.size() == 0){
+      return false;
+    }
+    return true;
+  }catch(const std::exception & e){
+    std::cerr << e.what() << std::endl;
+    return false;
   }
 }

@@ -28,6 +28,9 @@ struct _thread_send_para {
   std::string id;
   int sockfd;
   connection* C;
+  int purchase_id;
+  int worldid;
+  int wh_count;
 };
 typedef struct _thread_send_para thread_send_para;  
 //
@@ -58,8 +61,17 @@ struct _thread_load_para {
   int sockfd;
 };
 typedef struct _thread_load_para thread_load_para;
-
+//
+struct _thread_buy_para {
+  int sockfd;
+  connection* C;
+  std::string id;
+  int wh_count;
+};
+typedef struct _thread_buy_para thread_buy_para;  
+//
 void* pack_thread_func(void* para);
 void* load_thread_func(void* para);
 void* send_thread_func(void* para);
 void* recv_thread_func(void* para);
+void* buy_thread_func(void* para);

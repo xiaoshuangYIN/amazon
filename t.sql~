@@ -1,0 +1,7 @@
+CREATE TABLE stock_to_add (
+       wid int8,
+              hid int4,
+	             pid int8,
+		            descr text,
+			           num int8,
+				   );

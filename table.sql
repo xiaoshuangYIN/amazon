@@ -13,7 +13,17 @@ DROP TABLE Whstock;
 DROP TABLE Whready;
 DROP TABLE Shipments;
 DROP TABLE Purchased_Product;
+DROP TABLE stock_to_add;
 /* create tables */
+CREATE TABLE stock_to_add (
+       wid int8,
+       hid int4,
+       pid int8,
+       descr text,
+       num int8
+);
+
+
 CREATE TABLE Purchased_Product (
        cid int8,
        pid int8,
@@ -43,7 +53,7 @@ CREATE TABLE Ship_temp (
 );
 
 CREATE TABLE shipment (
-       sid SERIAL PRIMARY KEY	
+       sid SERIAL PRIMARY KEY,	
        wid int8,
        hid int4,
        tid_list int8[],

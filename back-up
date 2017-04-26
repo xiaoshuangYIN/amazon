@@ -25,3 +25,30 @@
 	exit(-1);
       }
     */
+
+
+
+
+
+  /* purchase more */ // change
+  /*
+  if(!send_APurchaseMore(whNum,  products, sockfd)){
+    printf("send APurchaseMore failed\n");
+  }
+  */
+  /* pack */ // change
+  /*
+  uint64_t shipId = 0;
+  for(shipId = 1; shipId < 6; shipId++){
+    if(!send_APack(whNum, shipId, pur, sockfd)){
+      printf("send APack failed\n");
+    }
+  }
+  */
+  /* load */
+  /*
+  if(!send_APutOnTruck(sockfd, loads)){
+      printf("send APutOnTruck failed\n");
+  }
+  */
+
