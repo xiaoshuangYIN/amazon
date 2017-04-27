@@ -1,16 +1,20 @@
 #include <stdlib.h>
 #include <unistd.h>
+
 #include <inttypes.h>
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
+#include <sys/unistd.h>
+#include <sys/fcntl.h>
 #include <netinet/in.h>
 #include <netdb.h>
 #include <arpa/inet.h>
 #include <signal.h>
 #include <string.h>
 #include <pthread.h>
+
 
 #include <vector>
 #include <string>

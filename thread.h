@@ -1,3 +1,4 @@
+#include <utility>  
 #include <string>
 #include <stdio.h>
 #include <stdlib.h>
@@ -38,6 +39,7 @@ struct _thread_recv_para {
   std::string id;
   int sockfd;
   connection* C;
+  int wid;
 };
 typedef struct _thread_recv_para thread_recv_para;  
 //

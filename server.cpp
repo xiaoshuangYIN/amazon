@@ -70,6 +70,7 @@ int main(int argc, char* argv[]){
   recv_para.id = std::string("recv");
   recv_para.sockfd = sockfd;
   recv_para.C = C;
+  recv_para.wid = worldid;
   thread_buy_para buy_para;
   buy_para.id = std::string("buy");
   buy_para.sockfd = sockfd;

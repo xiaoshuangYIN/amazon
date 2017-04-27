@@ -31,6 +31,13 @@ void connect_sock(struct addrinfo** servinfo, int& sockfd, char* s){
       perror("amazon server: socket");
       continue;
     }
+    /*
+    int status = fcntl(sockfd, F_SETFL, O_NONBLOCK);
+    if (status == -1){
+      perror("calling fcntl");
+    }
+    */
+    //fcntl(s, F_SETFL, O_ASYNC);     // set to asynchronous I/O
     
     if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
       close(sockfd);

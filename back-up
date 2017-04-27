@@ -52,3 +52,39 @@
   }
   */
 
+
+void* pack_thread_func(void* para){
+  thread_pack_para* para_pack = (thread_pack_para*)para;
+  printf("It's me, thread %s!\n", (para_pack->id).c_str());
+  int sid = 1;
+  std::string status = std::string("pack0");
+  while(true){
+    // load shipment where sid = sid, status = pack0
+    std::string sid_str;
+    to_string(sid, sid_str);
+    std::vector<std::unordered_map<std::string, std::string> >prods;
+    uint32_t whnum;
+    uint64_t shipid;
+    bool ready = db_get_ship_topack(para_pack->C, sid_str, status, whnum, prods, shipid);
+    if(ready == false){
+      // continue;
+      break;
+    }
+    // write Acommand
+
+    // send message
+    
+    sid++;
+  }
+  pthread_exit(NULL);
+}
+
+void* load_thread_func(void* para){
+  thread_load_para* para_load = (thread_load_para*)para;
+  printf("It's me, thread %s!\n", (para_load->id).c_str());
+  int sid = 1;
+  while(true){
+    sid++;
+  }
+  pthread_exit(NULL);
+}

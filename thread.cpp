@@ -9,41 +9,6 @@ void to_string(T a, std::string& res){
   ss.str("");
 }
 
-void* pack_thread_func(void* para){
-  thread_pack_para* para_pack = (thread_pack_para*)para;
-  printf("It's me, thread %s!\n", (para_pack->id).c_str());
-  int sid = 1;
-  std::string status = std::string("pack0");
-  while(true){
-    // load shipment where sid = sid, status = pack0
-    std::string sid_str;
-    to_string(sid, sid_str);
-    std::vector<std::unordered_map<std::string, std::string> >prods;
-    uint32_t whnum;
-    uint64_t shipid;
-    bool ready = db_get_ship_topack(para_pack->C, sid_str, status, whnum, prods, shipid);
-    if(ready == false){
-      // continue;
-      break;
-    }
-    // write Acommand
-
-    // send message
-    
-    sid++;
-  }
-  pthread_exit(NULL);
-}
-
-void* load_thread_func(void* para){
-  thread_load_para* para_load = (thread_load_para*)para;
-  printf("It's me, thread %s!\n", (para_load->id).c_str());
-  int sid = 1;
-  while(true){
-    sid++;
-  }
-  pthread_exit(NULL);
-}
 
 void* send_thread_func(void* para){
   //global:
@@ -134,6 +99,7 @@ void* send_thread_func(void* para){
     }
     
     // send Apick to UPS
+    
 
     // increment purchase_id(cid)
     purchase_id++;
@@ -147,26 +113,50 @@ void* recv_thread_func(void* para)
   thread_recv_para* para_recv = (thread_recv_para*)para;
   printf("It's me, thread %s!\n", (para_recv->id).c_str());
   //AResponses res;
-
   /*
-  while(true){
+    while(true){
     recv_AResponse(para_recv->sockfd, res);
   }
   */
-
+  
   do {
-    AResponses res;
-    
-    if(recv_AResponse(para_recv->sockfd, res)){
-      //do stuff
+
+    std::vector<int> readys;
+    std::vector<int> loadeds;
+    std::vector<std::pair<int, std::vector<std::unordered_map<std::string, std::string> > > >arriveds;
+
+    //AResponses Ares;
+    if(recv_parse_AResponse(para_recv->sockfd, readys, loadeds, arriveds)){
+      // update db
+      // arrived
+      for(int i = 0; i < arriveds.size(); i++){
+	sleep(2);
+	std::string whnum;
+	std::string wid;
+	to_string( para_recv->wid , wid);
+	to_string(arriveds[i].first, whnum);
+	for(int j = 0; j < (arriveds[i].second).size(); j++){
+	  db_add_stock(para_recv->C, wid, whnum, ((arriveds[i].second)[j])["id"],  ((arriveds[i].second)[j])["count"], ((arriveds[i].second)[j])["description"]);
+	}
+      }
+      // ready
+      /*
+      for(int i = 0; i < readys.size(); i++){
+
+      }
+      for(int i = 0; i < loadeds.size(); i++){
+
+      }
+      */
     }
     else {
       break;
     }
   }while(1);
-  
-  /*test: add stock */
 
+    
+  /*test: add stock */
+  /*
   std::string whnum("2");
   std::string pid("1");
   // std::string num("20");
@@ -174,7 +164,9 @@ void* recv_thread_func(void* para)
   std::string descr("book");
   sleep(2);
   db_add_stock(para_recv->C, wid, whnum, pid,  20, descr);
+  */
 
+  
   pthread_exit(NULL);
 
 }

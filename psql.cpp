@@ -94,7 +94,7 @@ bool db_add_ship_temp(connection* C, std::string wid, std::string hid, std::stri
       + pid + comma
       + num_buy + comma
       + cid 
-      + post;;
+      + post;
     work W_create(*C);
     W_create.exec(insert_q);
     W_create.commit();
@@ -362,7 +362,7 @@ int db_check_stock_exist(connection* C, std::string wid, std::string hid, std::s
 int db_check_stock(connection* C, std::string wid, std::string hid, std::string pid){
   try{
     std::string init = "SELECT num FROM whstock WHERE ";
-    std::string post = ");";
+    std::string post = ";";
     std::string wids = "wid = ";
     std::string hids = "hid = ";
     std::string pids = "pid = ";
@@ -371,7 +371,7 @@ int db_check_stock(connection* C, std::string wid, std::string hid, std::string 
 
     nontransaction N(*C);
     result R(N.exec(retrieve_q));
-    int res = 0;
+    int res = -1;
     for(result::const_iterator c = R.begin(); c != R.end(); ++c){
       res = c[0].as<int>();
     }
@@ -385,7 +385,7 @@ int db_check_stock(connection* C, std::string wid, std::string hid, std::string 
 int db_check_prod(connection* C, std::string pid){
   try{
     std::string init = "SELECT count  FROM account_product WHERE ";
-    std::string post = ");";
+    std::string post = ";";
     std::string pids = "product_id = ";
     std::string retrieve_q = init + pids + pid + post;
 
@@ -442,19 +442,20 @@ bool db_add_act_prod(connection* C, std::string num, std::string pid, std::strin
       std::string mid ("VALUES (" );
       std::string post(");");
       std::string comma (",");
-      std::string insert_q("");
-      std::string empty(" '' ");
+      std::string empty(" ");
+      std::string empty_s(" '' ");
       std::string qleft("'");
       std::string qright("'");
       std::string price("5");
+      std::string insert_q("");
       insert_q = pre + table + mid
 	+ empty + comma
 	+ pid + comma
 	+ qleft + descr + qright + comma
 	+ num + comma
 	+ price + comma
-	+ empty + comma
-	+ empty + comma
+	+ empty_s + comma
+	+ empty_s 
 	+ post;
       work W_create(*C);
       W_create.exec(insert_q);
@@ -471,14 +472,17 @@ bool db_add_act_prod(connection* C, std::string num, std::string pid, std::strin
 /*
  wid  | hid | pid |   descr    | num 
 */
-bool db_add_stock(connection* C,std::string wid, std::string whnum, std::string pid, int num, std::string descr){
+bool db_add_stock(connection* C,std::string wid, std::string whnum, std::string pid, std::string new_num, std::string descr){
   int num_stock = db_check_stock(C, wid, whnum, pid);
-  
-  if(num_stock > -1){
+  printf("num_stock = %d\n", num_stock);
+
+  if(num_stock >= 0){
     try{
-      std::string new_num ;
-      To_string(num_stock + num, new_num);
-      
+      std::string num;
+      int new_num_int;
+      std::stringstream ss(new_num);
+      ss >> new_num_int;
+      To_string((new_num_int + num_stock), num);
       std::string pre ("UPDATE ");
       std::string table (" whstock ");
       std::string set (" SET" );
@@ -494,7 +498,7 @@ bool db_add_stock(connection* C,std::string wid, std::string whnum, std::string 
       std::string hids(" hid = ");
       std::string pids(" pid = ");
       std::string  update_q = pre + table + set
-	+ nums + new_num
+	+ nums + num
 	+ where
 	+ wids + wid
 	+ AND + hids + whnum
@@ -505,13 +509,18 @@ bool db_add_stock(connection* C,std::string wid, std::string whnum, std::string 
       W.commit();
 
       // upadte account_product
+      /*
       int num_act = db_check_prod(C, pid);
       if(num_act == num_stock){
 	db_update_actprod(C, pid, new_num);
+	printf("num_act_prod = %d\n", num_act);
       }
       else{
+	printf("num_act_prod = %d\n", num_act);
 	std::cerr<<"whstock and account_product not match\n";
+	db_update_actprod(C, pid, new_num)
       }
+      */
       return true;
     }
     catch(const std::exception & e){
@@ -521,8 +530,6 @@ bool db_add_stock(connection* C,std::string wid, std::string whnum, std::string 
   }
   else{
     try{
-      std::string new_num ;
-      To_string( num, new_num);
       
       std::string pre ("INSERT INTO ");
       std::string table (" whstock ");
@@ -543,7 +550,7 @@ bool db_add_stock(connection* C,std::string wid, std::string whnum, std::string 
       work W_create(*C);
       W_create.exec(insert_q);
       W_create.commit();
-      db_add_act_prod(C, new_num, pid ,descr);
+      //db_add_act_prod(C, new_num, pid ,descr);
       return true;
     }
     catch(const std::exception & e){

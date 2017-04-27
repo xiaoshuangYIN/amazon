@@ -1,4 +1,11 @@
 #include "msg.h"
+template <class T>
+void to_String(T a, std::string& res){
+  std::stringstream ss;
+  ss << a;
+  res = ss.str();
+  ss.str("");
+}
 
 
 
@@ -50,19 +57,6 @@ template<typename T> bool recvMesgFrom(T & message,
   input.PopLimit(limit);
   return true;
 }
-
-bool recv_AResponse(int sockfd, AResponses& res){
-  /* receive */
-  google::protobuf::io::FileInputStream * infile = new google::protobuf::io::FileInputStream(sockfd);
-  if (!recvMesgFrom(res, infile)){
-    std::cerr<<"amazon server: AResponse fail to recv\n";
-    return false;
-  }
-  /* test AConnected */
-  printf("rec from sim: %s\n", res.DebugString().c_str());
-  return true;
-}
-
 bool send_AConnect(uint64_t worldid, int sockfd){
   AConnect conn;
   conn.set_worldid(worldid);// worldid = the value after init world
@@ -205,3 +199,71 @@ bool send_APutOnTruck(int sockfd, std::vector<std::unordered_map<std::string, st
   }
   return true;
 }
+
+// TO DO
+
+void parse_AResponses(AResponses Ares, std::vector<int>& readys, std::vector<int>& loadeds, std::vector<std::pair<int, std::vector<std::unordered_map<std::string, std::string> > > >& arriveds){
+
+  if(Ares.arrived_size() > 0){
+    for(int i = 0; i < Ares.arrived_size(); i++){
+      std::pair<int, std::vector<std::unordered_map<std::string, std::string> > > wh_prods;
+
+      std::vector<std::unordered_map<std::string, std::string> >prods;
+      std::unordered_map<std::string, std::string> prod;
+      for(int j = 0; j < (Ares.arrived(i)).things_size(); j++){
+	
+
+	std::string id;
+	to_String(Ares.arrived(i).things(j).id(), id);
+	prod["id"]= id;
+
+	std::string desc;
+	to_String(Ares.arrived(i).things(j).description(), desc);
+	prod["description"]= desc;
+
+	std::string count;
+	to_String(Ares.arrived(i).things(j).count(), count);
+	prod["count"]= count;
+	
+	prods.push_back(prod);
+      }//for
+      wh_prods = std::make_pair(Ares.arrived(i).whnum(), prods);
+      arriveds.push_back(wh_prods);
+    }// for
+  }// if
+  // ready
+  if(Ares.ready_size() > 0){
+    for(int i = 0; i < Ares.ready_size(); i++){
+      readys.push_back(Ares.ready(i));
+    }
+  }
+  // loaded
+  if(Ares.loaded_size() > 0){
+    for(int i = 0; i < Ares.loaded_size(); i++){
+      readys.push_back(Ares.loaded(i));
+    }
+  }
+  //error
+
+}
+
+
+
+bool recv_parse_AResponse(int sockfd,  std::vector<int>& readys, std::vector<int>& loadeds, std::vector<std::pair<int, std::vector<std::unordered_map<std::string, std::string> > > >& arriveds){
+  // receive
+  AResponses res;
+  google::protobuf::io::FileInputStream * infile = new google::protobuf::io::FileInputStream(sockfd);
+  if (!recvMesgFrom(res, infile)){
+    std::cerr<<"amazon server: AResponse fail to recv\n";
+    return false;
+  }
+  // print response
+  printf("rec from sim: %s\n", res.DebugString().c_str());
+
+  // parse
+  parse_AResponses(res, readys, loadeds, arriveds);
+
+  // return
+  return true;
+}
+
