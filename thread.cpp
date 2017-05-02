@@ -101,19 +101,24 @@ void* ship_thread_func(void* para){
     std::vector<std::vector<std::unordered_map<std::string, std::string> > >prod_maps;
     db_add_shipments(para_ship->C, s_wid, purchase_id_str, wh_count, ship_maps, prod_maps);
 
-
-    // TO DO: create UCommands
      for(int i = 0; i < ship_maps.size(); i++){
        ACommands Acomd;
-      for(int j = 0; j < prod_maps[i].size(); j++){
-	std::cout<< ((prod_maps[i])[j])["desc"] << std::endl;
-      }
-      create_ACom_APack((ship_maps[i])["hid"], (ship_maps[i])["sid"] , prod_maps[i], Acomd);
-
+       
+       create_ACom_APack((ship_maps[i])["hid"], (ship_maps[i])["sid"] , prod_maps[i], Acomd);
+       //lock
+       pthread_mutex_lock(&ma);
+       para_ship->queue->push_back(Acomd);
+       pthread_mutex_unlock(&ma); 
+       // unlock
+       
+      AmazontoUPS Ucomd;
+      std::unordered_map<std::string, int> package;
+      db_get_package_info(para_ship->C,  (ship_maps[i])["sid"], package);
+      create_UCom_UPick( package, (ship_maps[i])["hid"], Ucomd);
       //lock
-      pthread_mutex_lock(&ma);
-      para_ship->queue->push_back(Acomd);
-      pthread_mutex_unlock(&ma); 
+      pthread_mutex_lock(&mu);
+      para_ship->Uqueue->push_back(Ucomd);
+      pthread_mutex_unlock(&mu); 
       // unlock
 
       printf("sent APack, sid = %d\n", (ship_maps[i])["sid"]);
@@ -148,36 +153,27 @@ void* send_thread_func(void* para){
     }
     pthread_mutex_unlock(&ma);
     // unlock
-    
-    
-  }
- 
-  pthread_exit(NULL);
+    }
+   pthread_exit(NULL);
 }
 
 void* recv_thread_func(void* para)
 {
   thread_recv_para* para_recv = (thread_recv_para*)para;
   printf("It's me, thread %s!\n", (para_recv->id).c_str());
-  //AResponses res;
-  /*
-    while(true){
-    recv_AResponse(para_recv->sockfd, res);
-  }
-  */
+
   
   do {
-
     std::vector<int> readys;
     std::vector<int> loadeds;
     std::vector<std::pair<int, std::vector<std::unordered_map<std::string, std::string> > > >arriveds;
 
     //AResponses Ares;
     if(recv_parse_AResponse(para_recv->sockfd, readys, loadeds, arriveds)){
-      // update db
+     
       // arrived
       for(int i = 0; i < arriveds.size(); i++){
-	sleep(2);
+	sleep(1);
 	std::string whnum;
 	std::string wid;
 	to_string( para_recv->wid , wid);
@@ -186,15 +182,46 @@ void* recv_thread_func(void* para)
 	  db_add_stock(para_recv->C, wid, whnum, ((arriveds[i].second)[j])["id"],  ((arriveds[i].second)[j])["count"], ((arriveds[i].second)[j])["description"]);
 	}
       }
+
       // ready
-      /*
       for(int i = 0; i < readys.size(); i++){
+	printf("ready shipid = %d\n", readys[i]);
+	// update status
+	db_update_status_act_pur(para_recv->C, readys[i], std::string("1"));
+	// check if the truck arrived
+	if(db_check_shipment_status(para_recv->C, readys[i], std::string("truck arrived"))){
+	  std::unordered_map<std::string, int>  load;
+	  // create: Aload
+	  ACommands ACom;
+	  db_get_Aload_info(para_recv->C, readys[i], load);
+	  create_ACom_ALoad(load, ACom);
+	  // lock
+	  pthread_mutex_lock(&ma);
+	  para_recv->queue->push_back(ACom);
+	  pthread_mutex_unlock(&ma);
+	  // unlock
 
+	  db_update_status_shipment(para_recv->C, readys[i], std::string("ALoad enqueued"));
+	}
+	db_update_status_shipment(para_recv->C, readys[i], std::string("ready"));
       }
+      
+      // Aloaded
       for(int i = 0; i < loadeds.size(); i++){
+	// create: Udispatch
+	AmazontoUPS Ucomd;
+	std::unordered_map<std::string, int> package;
+	db_get_package_info(para_recv->C, loadeds[i], package);
+	create_UCom_UDispatch(package, loadeds[i], Ucomd);
+	// lock
+	pthread_mutex_lock(&mu);
+	para_recv->Uqueue->push_back(Ucomd);
+	pthread_mutex_unlock(&mu);
+	// unlock
 
+	// update status
+	db_update_status_act_pur(para_recv->C,  loadeds[i], std::string("2"));
       }
-      */
     }
     else {
       break;
@@ -228,6 +255,72 @@ void* buy_thread_func(void* para){
     if(ready == true){
       send_APurchaseMore(i, prods, para_buy->sockfd);
     }
+  }
+  pthread_exit(NULL);
+}
+
+void* UPS_recv_func(void* parav){
+  thread_Ures_para* para = (thread_Ures_para*)parav;
+  printf("It's me, thread %s!\n", (para->id).c_str());
+  do {
+    std::vector<std::unordered_map<std::string, int> > truck_arriveds;
+    std::vector<std::unordered_map<std::string, int> > delivereds;
+    if(recv_parse_UResponse(para->infile, truck_arriveds, delivereds)){
+
+      // truck arrived
+      for(int i = 0; i < truck_arriveds.size(); i++){
+	std::vector<int> ready_list;
+	std::vector<int> not_ready_list;
+	// get sid by truckid and whid
+	db_get_sids_by_truckid_hid_status(para->C, truck_arriveds[i], std::string("ready"), std::string("order0"), ready_list, not_ready_list);
+	
+	for(int j = 0; j < ready_list.size(); j++){
+	  // create ALoad
+	  std::unordered_map<std::string, int> load;
+	  ACommands ACom;
+	  db_get_Aload_info(para->C, ready_list[j], load);
+	  create_ACom_ALoad(load, ACom);
+	  // enqueue
+	  pthread_mutex_lock(&ma);
+	  para->queue->push_back(ACom);
+	  pthread_mutex_unlock(&ma);
+	  // update status
+	  db_update_status_shipment(para->C, ready_list[j], std::string("Aload enqueued"));
+	}
+	for(int j = 0; j < not_ready_list.size(); j++){
+	  db_update_status_shipment(para->C, not_ready_list[j], std::string("truck arrived"));
+	}
+      }
+
+      // delievered
+      for(int i = 0; i < delivereds.size(); i++){
+	//updates
+	db_update_status_shipment(para->C, (delivereds[i])["packageid"], std::string("delivered"));
+	db_update_status_act_pur(para->C,  (delivereds[i])["packageid"], std::string("3"));
+      }
+      
+    }
+    else {
+      break;
+    }
+  } while(1);
+  pthread_exit(NULL);
+}
+
+void* UPS_send_func(void* parav){
+  thread_Ucom_para* para = (thread_Ucom_para*)parav;
+  printf("It's me, thread %s!\n", (para->id).c_str());
+
+  while(true){
+    // lock
+    pthread_mutex_lock(&mu);
+    int size = (*(para->queue)).size();
+    if( size > 0){
+      sendUMesgTo((*(para->queue))[0], para->outfile);
+      (para->queue)->erase(((para->queue)->begin())+0);
+    }
+    pthread_mutex_unlock(&mu);
+    // unlock
   }
   pthread_exit(NULL);
 }

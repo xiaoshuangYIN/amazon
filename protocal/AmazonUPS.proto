@@ -20,8 +20,9 @@ message pkgInfo {
 
 message sendTruck { // sent by Amazon to UPS at the same time Amazon sends APack to sim
 	 int32 whid = 1;
-	 int32 whX = 2; 
-	 int32 whY = 3; 
+	 repeated pkgInfo packages = 2;	
+	 int32 whX = 3; 
+	 int32 whY = 4;
 }
 
 message truckArrived { // sent by UPS to Amazon

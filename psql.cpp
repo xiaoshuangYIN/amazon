@@ -631,3 +631,213 @@ bool  db_get_prods_by_wid(connection* C, std::string hid, std::vector<std::unord
     return false;
   }
 }
+std::string db_get_cid_by_sid(connection* C, std::string sid){
+  try{
+    std::string res("");
+    std::string init("SELECT cid FROM shipment WHERE sid = ");
+    std::string post(";");
+    std::string q = init + sid + post;
+    work W(*C);
+    result R(W.exec(q));
+    W.commit();
+    for(result::const_iterator c = R.begin(); c != R.end(); ++c){
+      res = c[0].as<std::string>();
+    }
+    return res;
+  }
+  catch(const std::exception & e){
+    std::cerr << e.what() << std::endl;
+  }
+}
+void db_update_status_act_pur(connection* C, int sid, std::string status){
+  try{
+    std::string sid_str;
+    To_string(sid, sid_str);
+    std::string cid = db_get_cid_by_sid(C, sid_str);
+
+    std::string init("UPDATE account_purchase SET ");
+    std::string mid(" status =  ");
+    std::string WHERE(" WHERE ");
+    std::string cids(" purchase_summary_id = ");
+    std::string post(";");
+    std::string update_q("");
+
+    update_q = init + mid + status + WHERE + cids +cid + post;
+      
+    work W(*C);
+    result R(W.exec(update_q));
+    W.commit();
+    
+  }
+  catch(const std::exception & e){
+    std::cerr << e.what() << std::endl;
+  }
+}
+bool db_check_shipment_status(connection* C, int sid, std::string status){
+ try{
+   std::string sid_str;
+   To_string(sid, sid_str);
+       
+   std::string init = "SELECT EXISTS (SELECT sid, status_detail FROM shipment  WHERE ";
+    std::string post = ");";
+    std::string sids = "sid = ";
+    std::string statuss = "status_detail = ";
+    std::string lrq  = "'";
+    std::string AND = " AND ";
+    std::string retrieve_q = init + sids + sid_str + AND + statuss + lrq +
+      status + lrq + post;
+
+    nontransaction N(*C);
+    result R(N.exec(retrieve_q));
+    bool res;
+    for(result::const_iterator c = R.begin(); c != R.end(); ++c){
+      res = c[0].as<bool>();
+      if(res == true){
+	return true;
+      }
+      else if(res == false){
+	return false;
+      }
+    }
+  }catch(const std::exception & e){
+    std::cerr << e.what() << std::endl;
+ }
+}
+
+void db_update_status_shipment(connection* C, int sid, std::string status){
+try{
+    std::string sid_str;
+    To_string(sid, sid_str);
+
+    std::string init("UPDATE shipment SET ");
+    std::string mid(" status_detail =  ");
+    std::string WHERE(" WHERE ");
+    std::string sids(" sids = ");
+    std::string post(";");
+    std::string update_q("");
+
+    update_q = init + mid + status + WHERE + sids +sid_str + post;
+      
+    work W(*C);
+    result R(W.exec(update_q));
+    W.commit();
+    
+  }
+  catch(const std::exception & e){
+    std::cerr << e.what() << std::endl;
+  }
+  
+}
+
+void db_get_xy_by_cid(connection* C, std::string cid, std::unordered_map<std::string, int>& package){
+
+ try{
+   std::string init("SELECT x_coordinate, y_coordinate FROM account_purchase WHERE purchase_summary_id = ");
+    std::string post(";");
+    std::string q = init + cid+ post;
+    work W(*C);
+    result R(W.exec(q));
+    W.commit();
+    result::const_iterator c = R.begin();
+      package["delx"] = c[0].as<int>();
+      package["dely"] = c[1].as<int>();
+ }
+  catch(const std::exception & e){
+    std::cerr << e.what() << std::endl;
+  }
+}
+
+int  db_get_truckid_by_sid(connection* C, std::string sid_str){
+  try{
+    int res = 0;
+    std::string init("SELECT truckid FROM shipment WHERE sid = ");
+    std::string post(";");
+    std::string q = init + sid_str + post;
+    work W(*C);
+    result R(W.exec(q));
+    W.commit();
+    for(result::const_iterator c = R.begin(); c != R.end(); ++c){
+      res = c[0].as<int>();
+    }
+    return res;
+  }
+  catch(const std::exception & e){
+    std::cerr << e.what() << std::endl;
+  }
+}
+  
+void db_get_package_info(connection* C, int sid, std::unordered_map<std::string, int>& package){
+
+  std::string sid_str;
+  To_string(sid, sid_str);
+  std::string cid = db_get_cid_by_sid(C, sid_str);
+
+  // truck id
+  int truckid = db_get_truckid_by_sid(C, sid_str);
+  package["truckid"] = truckid;
+  // x,y
+  db_get_xy_by_cid(C, cid, package);
+  // sid 
+  package["sid"] = sid;
+}
+
+void db_get_Aload_info(connection* C, int sid, std::unordered_map<std::string, int>&load){
+  try{
+    std::string sid_str;
+    To_string(sid, sid_str);
+    
+    std::string init_retrv( "SELECT wid, truckid, sid FROM shipment WHERE ");
+    std::string sids(" sid = ");
+    std::string post(";");
+    std::string retrv_q = init_retrv + sids + sid_str + post;
+    work W(*C);
+    //nontransaction N(*C);
+    result R(W.exec(retrv_q));
+    W.commit();
+    for(result::const_iterator c = R.begin(); c != R.end(); ++c){
+      load["wid"] = c[0].as<int>();
+      load["truckid"] = c[1].as<int>();
+      load["sid"] = c[2].as<int>();
+    }
+  }catch(const std::exception & e){
+    std::cerr << e.what() << std::endl;
+  }
+}
+
+void db_get_sids_by_truckid_hid_status(connection* C, std::unordered_map<std::string, int>& truck_arrived, std::string ready_status, std::string not_ready_status, std::vector<int>& ready_list, std::vector<int>& not_ready_list){
+  try{
+    std::string truckid_str;
+    To_string(truck_arrived["truckid"], truckid_str);
+    std::string hid_str;
+    To_string(truck_arrived["hid"], hid_str);
+    
+    std::string init_retrv( "SELECT  sid FROM shipment WHERE ");
+    std::string truckids(" truckid = ");
+    std::string hids(" hids = ");
+    std::string status(" status_detail = ");
+    std::string AND(" AND ");
+    std::string post(";");
+    // ready
+    std::string retrv_q = init_retrv + truckids + truckid_str + AND + hids + hid_str + AND + status + ready_status + post;
+    work W(*C);
+    result R(W.exec(retrv_q));
+    W.commit();
+    for(result::const_iterator c = R.begin(); c != R.end(); ++c){
+      int sid = c[0].as<int>();
+      ready_list.push_back(sid);
+    }
+
+    // not-ready
+    std::string q = init_retrv + truckids + truckid_str + AND + hids + hid_str + AND + status + not_ready_status + post;
+    result R2(W.exec(q));
+    W.commit();
+    for(result::const_iterator c = R2.begin(); c != R2.end(); ++c){
+      int sid = c[0].as<int>();
+      not_ready_list.push_back(sid);
+    }
+  }
+  catch(const std::exception & e){
+    std::cerr << e.what() << std::endl;
+  }
+  
+}

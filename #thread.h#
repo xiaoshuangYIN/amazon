@@ -47,7 +47,6 @@ struct _thread_recv_para {
   connection* C;
   int wid;
   std::vector<ACommands>* queue;
-  std::vector<AmazontoUPS>* Uqueue;
 };
 typedef struct _thread_recv_para thread_recv_para;  
 
@@ -97,9 +96,6 @@ struct _thread_Ures_para {
   google::protobuf::io::FileInputStream * infile;
   connection* C;
   int worldid;
-  int sockfd;
-  std::vector<AmazontoUPS>* Uqueue;
-  std::vector<ACommands>* queue;
 };
 typedef struct _thread_Ures_para thread_Ures_para;  
 

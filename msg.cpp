@@ -7,11 +7,30 @@ void to_String(T a, std::string& res){
   ss.str("");
 }
 
+bool sendUMesgTo(AmazontoUPS &message , google::protobuf::io::FileOutputStream * out){
+  {
+    google::protobuf::io::CodedOutputStream output(out);
+    // Write the size.
+    const int size = message.ByteSize();
+    output.WriteVarint32(size);
+    uint8_t* buffer = output.GetDirectBufferForNBytesAndAdvance(size);
+    if (buffer != NULL) {
+      message.SerializeWithCachedSizesToArray(buffer);
+    }
+    else {
+      message.SerializeWithCachedSizes(&output);
+      if (output.HadError()) {
+	return false;
+      }
+    }
+  }
+  out->Flush();
+  return true;
+}
 
 
 template<typename T> bool sendMesgTo(const T & message, google::protobuf::io::FileOutputStream *out) {
   {
-
     google::protobuf::io::CodedOutputStream output(out);
     // Write the size.
     const int size = message.ByteSize();
@@ -57,6 +76,29 @@ template<typename T> bool recvMesgFrom(T & message,
   input.PopLimit(limit);
   return true;
 }
+
+bool recvUMesgFrom(UPStoAmazon& message,
+		   google::protobuf::io::FileInputStream* in ){
+  google::protobuf::io::CodedInputStream input(in);
+  // Read the size.
+  uint32_t size;
+  if (!input.ReadVarint32(&size)) {
+    return false;
+  }
+  // Tell the stream not to read beyond that size.
+  google::protobuf::io::CodedInputStream::Limit limit = input.PushLimit(size);
+  // Parse the message.
+  if (!message.MergeFromCodedStream(&input)) {
+    return false;
+  }
+  if (!input.ConsumedEntireMessage()) {
+    return false;
+  }
+  // Release the limit.
+  input.PopLimit(limit);
+  return true;
+}
+
 bool send_AConnect(uint64_t worldid, int sockfd){
   AConnect conn;
   conn.set_worldid(worldid);// worldid = the value after init world
@@ -171,6 +213,7 @@ bool send_simspeed(uint32_t speed, int sockfd){
   }
   return true;
 }
+
 bool send_APutOnTruck(int sockfd, std::vector<std::unordered_map<std::string, std::string> > loads){
 
 
@@ -288,4 +331,86 @@ void create_ACom_APack(uint32_t whNum, uint64_t shipId, std::vector<std::unorder
   std::cout<<"create apack\n"<<std::endl;
   std::cout<<comd.DebugString()<<"\n";
 
+}
+
+void create_ACom_ALoad(std::unordered_map<std::string, int> & load_m,   ACommands& comd){
+
+  /* Acommands(APack) */
+
+    APutOnTruck* load = comd.add_load();
+    //    int32_t whNum;
+    //int32_t truckId;
+    //int64_t shipId;
+    //std::stringstream((load_m)["whNum"]) >> whNum;
+    //std::stringstream((load_m)["shipId"]) >> shipId;
+    //std::stringstream((load_m)["truckId"]) >> truckId;
+    //load->set_whnum(whNum);
+    //load->set_shipid(shipId);
+    //load->set_truckid(truckId);
+    load->set_whnum(load_m["wid"]);
+    load->set_shipid(load_m["sid"]);
+    load->set_truckid(load_m["truckid"]);
+    std::cout<< comd.DebugString() <<"\n";
+
+}
+
+void create_UCom_UPick(std::unordered_map<std::string, int>  & package, int whid, AmazontoUPS& comd){
+    sendTruck* pickup =  comd.add_send_truck();
+    pickup->set_whid((uint32_t)whid);
+    
+    pkgInfo* pkg = pickup->add_packages();
+    pkg->set_packageid((uint32_t)package["sid"]);
+    pkg->set_delx((uint32_t)package["delx"]);
+    pkg->set_dely((uint32_t)package["dely"]);
+    //package->set_upsAccount((vv_packages[i][j])["upsact"]);
+}
+
+
+
+void create_UCom_UDispatch(std::unordered_map<std::string, int> & package, int sid, AmazontoUPS& comd){
+    dispatchTruck* dispatch =  comd.add_dispatch_truck();
+    dispatch->set_truckid(package["truckid"]);
+    
+    pkgInfo* pkg = dispatch->add_packages();
+    pkg->set_packageid((uint32_t)package["sid"]);
+    pkg->set_delx((uint32_t)package["delx"]);
+    pkg->set_dely((uint32_t)package["dely"]);
+    //package->set_upsAccount((vv_packages[i][j])["upsact"]);
+}
+
+void parse_UResponses(UPStoAmazon msg, std::vector<std::unordered_map<std::string, int> >& truck_arriveds, std::vector<std::unordered_map<std::string, int> >& delivereds){
+  if(msg.truck_arrived_size() > 0){
+    for(int i = 0; i < msg.truck_arrived_size(); i++){
+      std::unordered_map<std::string, int> map;
+      map["whid"] = msg.truck_arrived(i).whid();
+      map["truckid"] = msg.truck_arrived(i).truckid();
+      truck_arriveds.push_back(map);
+    }
+  }
+  if(msg.delivered_size() > 0){
+    for(int i = 0; i < msg.delivered_size(); i++){
+      std::unordered_map<std::string, int> map;
+      map["packageid"] = msg.delivered(i).packageid();
+      delivereds.push_back(map);
+    }
+  }
+
+}
+
+
+bool recv_parse_UResponse(google::protobuf::io::FileInputStream * in , std::vector<std::unordered_map<std::string, int> >& truck_arriveds, std::vector<std::unordered_map<std::string, int> >& delivereds){
+  UPStoAmazon msg;
+  if (! recvUMesgFrom(msg, in)){
+    std::cerr<<"amazon server: UResponse fail to recv\n";
+    return false;
+  }
+  // print response
+  printf("rec from UPS: %s\n", msg.DebugString().c_str());
+
+  // parse
+  parse_UResponses(msg, truck_arriveds, delivereds);
+
+  // return
+  return true;
+  
 }

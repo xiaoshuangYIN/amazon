@@ -17,6 +17,7 @@ message AConnect {
   int64 worldid = 1;
   repeated AInitWarehouse initwh = 2;
 }
+
 message AConnected {
   string error = 1;
 }

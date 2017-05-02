@@ -59,7 +59,11 @@ CREATE TABLE shipment (
        tid_list int8[],
        cid int8,
        status_detail text,
-       track_num text
+       track_num text,
+       delX int8,
+       delY int8,
+       UPSact int8,
+       descr varchar(30)
 );
 
 

@@ -391,15 +391,27 @@ class sendTruck : public ::google::protobuf::Message /* @@protoc_insertion_point
   ::google::protobuf::int32 whid() const;
   void set_whid(::google::protobuf::int32 value);
 
-  // optional int32 whX = 2;
+  // repeated .pkgInfo packages = 2;
+  int packages_size() const;
+  void clear_packages();
+  static const int kPackagesFieldNumber = 2;
+  const ::pkgInfo& packages(int index) const;
+  ::pkgInfo* mutable_packages(int index);
+  ::pkgInfo* add_packages();
+  ::google::protobuf::RepeatedPtrField< ::pkgInfo >*
+      mutable_packages();
+  const ::google::protobuf::RepeatedPtrField< ::pkgInfo >&
+      packages() const;
+
+  // optional int32 whX = 3;
   void clear_whx();
-  static const int kWhXFieldNumber = 2;
+  static const int kWhXFieldNumber = 3;
   ::google::protobuf::int32 whx() const;
   void set_whx(::google::protobuf::int32 value);
 
-  // optional int32 whY = 3;
+  // optional int32 whY = 4;
   void clear_why();
-  static const int kWhYFieldNumber = 3;
+  static const int kWhYFieldNumber = 4;
   ::google::protobuf::int32 why() const;
   void set_why(::google::protobuf::int32 value);
 
@@ -408,6 +420,7 @@ class sendTruck : public ::google::protobuf::Message /* @@protoc_insertion_point
 
   ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
   bool _is_default_instance_;
+  ::google::protobuf::RepeatedPtrField< ::pkgInfo > packages_;
   ::google::protobuf::int32 whid_;
   ::google::protobuf::int32 whx_;
   ::google::protobuf::int32 why_;
@@ -1075,7 +1088,37 @@ inline void sendTruck::set_whid(::google::protobuf::int32 value) {
   // @@protoc_insertion_point(field_set:sendTruck.whid)
 }
 
-// optional int32 whX = 2;
+// repeated .pkgInfo packages = 2;
+inline int sendTruck::packages_size() const {
+  return packages_.size();
+}
+inline void sendTruck::clear_packages() {
+  packages_.Clear();
+}
+inline const ::pkgInfo& sendTruck::packages(int index) const {
+  // @@protoc_insertion_point(field_get:sendTruck.packages)
+  return packages_.Get(index);
+}
+inline ::pkgInfo* sendTruck::mutable_packages(int index) {
+  // @@protoc_insertion_point(field_mutable:sendTruck.packages)
+  return packages_.Mutable(index);
+}
+inline ::pkgInfo* sendTruck::add_packages() {
+  // @@protoc_insertion_point(field_add:sendTruck.packages)
+  return packages_.Add();
+}
+inline ::google::protobuf::RepeatedPtrField< ::pkgInfo >*
+sendTruck::mutable_packages() {
+  // @@protoc_insertion_point(field_mutable_list:sendTruck.packages)
+  return &packages_;
+}
+inline const ::google::protobuf::RepeatedPtrField< ::pkgInfo >&
+sendTruck::packages() const {
+  // @@protoc_insertion_point(field_list:sendTruck.packages)
+  return packages_;
+}
+
+// optional int32 whX = 3;
 inline void sendTruck::clear_whx() {
   whx_ = 0;
 }
@@ -1089,7 +1132,7 @@ inline void sendTruck::set_whx(::google::protobuf::int32 value) {
   // @@protoc_insertion_point(field_set:sendTruck.whX)
 }
 
-// optional int32 whY = 3;
+// optional int32 whY = 4;
 inline void sendTruck::clear_why() {
   why_ = 0;
 }
