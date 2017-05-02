@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+message AConnectedToSim {
+	 int64 worldid = 1;
+}
+
+
+message UConnectedToSim {
+	 int64 worldid = 1;
+}
+
+message pkgInfo {
+	 int64 packageid = 1;
+	 int32 delX = 2;
+	 int32 delY = 3;
+	 int64 upsAcccount = 4;//opt
+	 string description = 5;//opt
+}
+
+
+message sendTruck { // sent by Amazon to UPS at the same time Amazon sends APack to sim
+	 int32 whid = 1;
+	 int32 whX = 2; 
+	 int32 whY = 3; 
+}
+
+message truckArrived { // sent by UPS to Amazon
+	 int32 whid = 1;
+	 int32 truckid = 2;
+}
+
+message dispatchTruck { // sent by Amazon to UPS once sim sends 'loaded' notification to Amazon
+	int32 truckid = 1; 
+	repeated pkgInfo packages = 2;
+}
+
+message packageDelivered { // sent by UPS to Amazon as a forwarding of sim's 'delivered' notification to UPS
+	 int64 packageid = 1;
+}
+
+message UPStoAmazon {
+         repeated truckArrived truck_arrived= 1;
+         repeated packageDelivered delivered = 2;
+         repeated UConnectedToSim uconnected = 3;
+}
+
+message AmazontoUPS {
+        repeated sendTruck send_truck = 1;
+        repeated dispatchTruck dispatch_truck = 2;
+        repeated AConnectedToSim aconnected = 3;
+}

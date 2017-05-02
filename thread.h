@@ -5,6 +5,7 @@
 #include <queue>
 #include <functional> 
 #include <unistd.h>
+#include <pthread.h>
 #include "msg.h"
 #include "psql.h"
 
@@ -24,17 +25,22 @@ public:
 typedef std::priority_queue<std::unordered_map<std::string, int>,
   std::vector<std::unordered_map<std::string, int> >,
   comp> pq_t;
-//
+
+// send Acomds
 struct _thread_send_para {
   std::string id;
-  int sockfd;
   connection* C;
+  int sockfd;
   int purchase_id;
   int worldid;
   int wh_count;
+  std::vector<ACommands>* queue;
+  google::protobuf::io::FileOutputStream * outfile;
 };
 typedef struct _thread_send_para thread_send_para;  
-//
+
+
+// recv Aresponse
 struct _thread_recv_para {
   std::string id;
   int sockfd;
@@ -42,28 +48,28 @@ struct _thread_recv_para {
   int wid;
 };
 typedef struct _thread_recv_para thread_recv_para;  
-//
+
+// send Ucommands
 struct _thread_pick_para {
   std::string id;
   int sockfd;// UPS conected to 
   connection* C;
 };
 typedef struct _thread_pick_para thread_pick_para;
-//
-struct _thread_pack_para {
+
+// ship
+struct _thread_ship_para {
   std::string id;
-  connection* C;
   int sockfd;
-};
-typedef struct _thread_pack_para thread_pack_para;
-//
-struct _thread_load_para {
-  std::string id;
+  std::vector<ACommands>* queue;
   connection* C;
-  int sockfd;
+  int purchase_id;
+  int worldid;
+  int wh_count;
 };
-typedef struct _thread_load_para thread_load_para;
-//
+typedef struct _thread_ship_para thread_ship_para;  
+
+// 
 struct _thread_buy_para {
   int sockfd;
   connection* C;
@@ -72,6 +78,7 @@ struct _thread_buy_para {
 };
 typedef struct _thread_buy_para thread_buy_para;  
 //
+void* ship_thread_func(void* para);
 void* pack_thread_func(void* para);
 void* load_thread_func(void* para);
 void* send_thread_func(void* para);

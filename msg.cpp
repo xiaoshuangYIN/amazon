@@ -267,3 +267,25 @@ bool recv_parse_AResponse(int sockfd,  std::vector<int>& readys, std::vector<int
   return true;
 }
 
+void create_ACom_APack(uint32_t whNum, uint64_t shipId, std::vector<std::unordered_map<std::string, std::string> > &products,   ACommands& comd){
+  /* Acommands(APack) */
+
+  APack* pack = comd.add_topack();
+  pack->set_whnum(whNum);
+  pack->set_shipid(shipId);
+
+  AProduct* prod;
+  uint64_t id = 0;
+  uint32_t count = 0;
+  for(int i = 0; i < products.size(); i++){
+    prod = pack->add_things();
+    std::stringstream((products[i])["pid"]) >> id;
+    std::stringstream((products[i])["count"]) >> count;
+    prod->set_description((products[i])["desc"]);
+    prod->set_count(count);
+    prod->set_id(id);
+  }
+  std::cout<<"create apack\n"<<std::endl;
+  std::cout<<comd.DebugString()<<"\n";
+
+}

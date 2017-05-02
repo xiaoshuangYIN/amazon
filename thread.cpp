@@ -1,7 +1,9 @@
 #include "thread.h"
 
-template <class T>
+pthread_mutex_t ma;
+pthread_mutex_t mu;
 
+template <class T>
 void to_string(T a, std::string& res){
   std::stringstream ss;
   ss << a;
@@ -9,15 +11,15 @@ void to_string(T a, std::string& res){
   ss.str("");
 }
 
-
-void* send_thread_func(void* para){
+void* ship_thread_func(void* para){
   //global:
-  thread_send_para* para_send = (thread_send_para*)para;
-  printf("It's me, thread %s!\n", (para_send->id).c_str());
-  int sockfd = para_send->sockfd;
-  int purchase_id = para_send->purchase_id;  
-  int wh_count = para_send->wh_count;
-  int worldid = para_send->wh_count;
+  thread_ship_para* para_ship = (thread_ship_para*)para;
+  printf("It's me, thread %s!\n", (para_ship->id).c_str());
+
+
+  int purchase_id = para_ship->purchase_id;  
+  int wh_count = para_ship->wh_count;
+  int worldid = para_ship->wh_count;
   std::string s_wid;
   to_string(worldid, s_wid);
   
@@ -26,12 +28,13 @@ void* send_thread_func(void* para){
     std::vector<std::unordered_map<std::string, std::string> > prod_array;
     std::string purchase_id_str;
     to_string(purchase_id, purchase_id_str);
-    bool ready = db_get_purch(para_send->C, std::string("0"), purchase_id_str , prod_array);
+
+    bool ready = db_get_purch(para_ship->C, std::string("0"), purchase_id_str , prod_array);
     if(ready == false){
       sleep(5);
       continue;
     }
-    //  for all product in this purchase
+    //  for all products in this purchase
     for(int i = 0; i < prod_array.size(); i++){
       pq_t pq(comp(false));
       int total_num = 0;
@@ -41,7 +44,7 @@ void* send_thread_func(void* para){
       
       // find the wharehouse number
       std::vector<std::unordered_map<std::string, int> > wh_map_array;
-      db_get_hid(para_send->C, (prod_array[i])["pid"], wh_map_array);
+      db_get_hid(para_ship->C, (prod_array[i])["pid"], wh_map_array);
       if(wh_map_array.size() > 0){
 	for(int j = 0; j < wh_map_array.size(); j++){
 	  //put into priority queue
@@ -53,6 +56,7 @@ void* send_thread_func(void* para){
 	if(total_num < buy_count){
 	  std::cout<< "purchase id = " << (prod_array[i])["purid"] << "does not have sefficient stock in warehouses.\n";
 	}
+	
 	// pop out untill the sum = num_buy
 	else{
 	  while (sum < buy_count){
@@ -60,20 +64,28 @@ void* send_thread_func(void* para){
 	    // insert into ship_temp
 	    std::stringstream ss;
 	    std::string  s_hid, s_pid, s_num, s_cid;
-
+	    // if the first warehouse already has enough stock:
+	    if(m["num"] > (buy_count - sum)){
+	      to_string(buy_count, s_num);
+	      sum += buy_count;
+	    }
+	    else{
+	      to_string(m["num"], s_num);
+	      sum += m["num"];
+	    }
+	    
 	    to_string(m["hid"], s_hid);
 	    s_pid = (prod_array[i])["pid"];
-	    to_string(m["num"], s_num);
 	    s_cid = (prod_array[i])["purchase_summary_id"];
 	    db_add_ship_temp(
-			     para_send->C,
+			     para_ship->C,
 			     s_wid,
 			     s_hid,
 			     s_pid,
 			     s_num,
 			     s_cid);
-	    sum += m["num"];
-	    //printf("%d \n", m["num"]);
+	    // To DO upate: stock
+
 	    pq.pop();
 	  }
 	}// else: enough warehouse
@@ -85,26 +97,61 @@ void* send_thread_func(void* para){
     
 
     // comb ship_temp into shipment(same purchase_id, same hid)
-    std::vector<std::unordered_map<std::string, int> > ship_maps;
+    std::vector<std::unordered_map<std::string, int> > ship_maps;// for this purchase
     std::vector<std::vector<std::unordered_map<std::string, std::string> > >prod_maps;
-    db_add_shipments(para_send->C, s_wid, purchase_id_str, wh_count, ship_maps, prod_maps);
-    
+    db_add_shipments(para_ship->C, s_wid, purchase_id_str, wh_count, ship_maps, prod_maps);
 
-    // send Apack to sim
-    for(int i = 0; i < ship_maps.size(); i++){
-      if(!send_APack((ship_maps[i])["hid"], (ship_maps[i])["sid"] , prod_maps[i], para_send->sockfd)){
-	printf("send APack failed\n");
+
+    // TO DO: create UCommands
+     for(int i = 0; i < ship_maps.size(); i++){
+       ACommands Acomd;
+      for(int j = 0; j < prod_maps[i].size(); j++){
+	std::cout<< ((prod_maps[i])[j])["desc"] << std::endl;
       }
+      create_ACom_APack((ship_maps[i])["hid"], (ship_maps[i])["sid"] , prod_maps[i], Acomd);
+
+      //lock
+      pthread_mutex_lock(&ma);
+      para_ship->queue->push_back(Acomd);
+      pthread_mutex_unlock(&ma); 
+      // unlock
+
       printf("sent APack, sid = %d\n", (ship_maps[i])["sid"]);
     }
-    
-    // send Apick to UPS
+     
+
     
 
     // increment purchase_id(cid)
     purchase_id++;
     sleep(5);
   }// end while(true)
+  pthread_exit(NULL);
+}
+
+
+void* send_thread_func(void* para){
+  thread_send_para* para_send = (thread_send_para*)para;
+  printf("It's me, thread %s!\n", (para_send->id).c_str());
+ 
+  while(true){
+
+    // lock
+    pthread_mutex_lock(&ma);
+    int size = (*(para_send->queue)).size();
+    if( size > 0){
+      //google::protobuf::io::FileOutputStream * outfile = new google::protobuf::io::FileOutputStream(para_send->sockfd);
+
+      sendMesgTo((*(para_send->queue))[0], para_send->outfile);
+      
+      (para_send->queue)->erase(((para_send->queue)->begin())+0);
+    }
+    pthread_mutex_unlock(&ma);
+    // unlock
+    
+    
+  }
+ 
   pthread_exit(NULL);
 }
 

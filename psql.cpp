@@ -24,11 +24,13 @@ connection* create_connection(){
     exit(1);
   }
 }
-
+/*
+product_id | description | count | price | x_coordinate | y_coordinate | status | tracking | purchase_summary_id
+*/
 bool db_get_purch(connection* C, std::string status, std::string purchase_id, std::vector<std::unordered_map<std::string, std::string> >& map_array ){
   try{
     
-    std::string init_retrv = "SELECT * FROM account_purchase WHERE status= ";
+    std::string init_retrv = "SELECT product_id, description, count, x_coordinate,y_coordinate, status, purchase_summary_id  FROM account_purchase WHERE status= ";
     std::string post(";");
     std::string AND(" AND ");
     std::string mid(" purchase_summary_id  = ");
@@ -39,12 +41,16 @@ bool db_get_purch(connection* C, std::string status, std::string purchase_id, st
     W.commit();
     std::unordered_map<std::string, std::string> map;
     for(result::const_iterator c = R.begin(); c != R.end(); ++c){
-      map["purchase_summary_id"] = c[9].as<std::string>();
-      map["pid"] = c[1].as<std::string>();
-      map["descrp"] = c[2].as<std::string>();
-      map["count"] = c[3].as<std::string>();
-      map["status"] = c[4].as<std::string>();
+      map["pid"] = c[0].as<std::string>();
+      map["descrp"] = c[1].as<std::string>();
+      map["count"] = c[2].as<std::string>();
+      map["delx"] = c[3].as<std::string>();
+      map["dely"] = c[4].as<std::string>();
+      map["status"] = c[5].as<std::string>();
+      map["purchase_summary_id"] = c[6].as<std::string>();
+      std::cout<<"test count " << map["descrp"] << " " << map["count"]<<std::endl;
       map_array.push_back(map);
+
     }
     if(map_array.size() == 0){
       return false;
@@ -60,7 +66,7 @@ bool db_get_purch(connection* C, std::string status, std::string purchase_id, st
 void db_get_hid(connection* C, std::string pid, std::vector<std::unordered_map<std::string, int> >& map_array){
   try{
     
-    std::string init_retrv = "SELECT hid, num FROM whstock  WHERE pid= ";
+    std::string init_retrv = "SELECT hid, num FROM whstock WHERE pid= ";
     std::string post(";");
     std::string retrv_q = init_retrv  + pid + post;
     work W(*C);
@@ -87,7 +93,7 @@ bool db_add_ship_temp(connection* C, std::string wid, std::string hid, std::stri
     std::string post(");");
     std::string comma (",");
     std::string insert_q("");
-
+    std::cout<<"test " << pid << " " << num_buy << std::endl;
     insert_q = pre + table + mid
       + wid + comma
       + hid + comma
@@ -131,6 +137,7 @@ std::string get_tids_by_same_hid_cid(connection* C, std::string hid, std::string
       tid_list.pop_back();
     }
     return tid_list;
+      
     
   }catch(const std::exception & e){
     std::cerr << e.what() << std::endl;
@@ -178,10 +185,14 @@ bool db_add_ship(connection* C, std::string wid, std::string hid, std::string ci
 void parse_str(std::string tid_list, std::vector<std::string>& tid_vector){
   std::istringstream ss(tid_list);
   std::string token;
-
+  std::cout<<"*******\n";
   while(std::getline(ss, token, ',')) {
     tid_vector.push_back(token);
+    std::cout <<"---------" <<std::endl;
+    std::cout<<token<<std::endl;
   }
+  std::cout<<"*******\n";
+  
 }
 
 std::string db_get_pid_by_tid(connection* C, std::string tid){
@@ -208,9 +219,32 @@ std::string db_get_pid_by_tid(connection* C, std::string tid){
 /*
 product_id | description | count 
 */
-void db_get_prod_by_pid(connection* C, std::string pid, std::unordered_map<std::string, std::string>& map){
+std::string db_get_buy_count_by_pid_cid(connection* C, std::string pid, std::string cid){
+  std::string count = "";
   try{
-    std::string init_retrv( "SELECT product_id, description, count FROM account_product WHERE product_id = ");
+  std::string init_retrv( "SELECT count from account_purchase WHERE product_id = ");
+  
+    std::string post(";");
+    std::string AND(" AND ");
+    std::string cids(" purchase_summary_id = ");
+    std::string retrv_q = init_retrv + pid + AND + cids + cid + post;
+    work W(*C);
+    //nontransaction N(*C);
+    result R(W.exec(retrv_q));
+    W.commit();
+    for(result::const_iterator c = R.begin(); c != R.end(); ++c){
+      count =  c[0].as<std::string>();
+    }
+    return count;
+  }
+  catch(const std::exception & e){
+    std::cerr << e.what() << std::endl;
+  }
+}
+
+void db_get_prod_by_pid(connection* C, std::string pid, std::unordered_map<std::string, std::string>& map, std::string cid){
+  try{
+    std::string init_retrv( "SELECT product_id, description  FROM account_product WHERE product_id = ");
 
     std::string post(";");
     std::string retrv_q = init_retrv + pid + post;
@@ -221,25 +255,29 @@ void db_get_prod_by_pid(connection* C, std::string pid, std::unordered_map<std::
     for(result::const_iterator c = R.begin(); c != R.end(); ++c){
       map["pid"] = c[0].as<std::string>();
       map["desc"] = c[1].as<std::string>();
-      map["count"] = c[2].as<std::string>();
+      map["count"] = db_get_buy_count_by_pid_cid(C, map["pid"], cid);
+      
     }
   }catch(const std::exception & e){
     std::cerr << e.what() << std::endl;
   }
 }
 
-void db_get_prod_by_tid(connection* C, std::string tid , std::unordered_map<std::string, std::string>& prod){
+void db_get_prod_by_tid(connection* C, std::string tid , std::unordered_map<std::string, std::string>& prod, std::string cid){
   std::string  pid = db_get_pid_by_tid(C, tid);
-  db_get_prod_by_pid(C, pid, prod);
+  db_get_prod_by_pid(C, pid, prod, cid);
 }
 
-void db_get_prods_by_tids(connection* C, std::string tid_list, std::vector<std::unordered_map<std::string, std::string> >& prods){
+void db_get_prods_by_tids(connection* C, std::string tid_list, std::vector<std::unordered_map<std::string, std::string> >& prods, std::string cid){
+
   std::vector<std::string> tid_vector;
+  //std::cout<<tid_list<<std::endl;
   parse_str(tid_list, tid_vector);
+  //tid_vector.push_back(tid_list);
   
   for(int i = 0; i < tid_vector.size(); i++){
     std::unordered_map<std::string, std::string> prod;
-    db_get_prod_by_tid(C, tid_vector[i], prod);
+    db_get_prod_by_tid(C, tid_vector[i], prod, cid);
     prods.push_back(prod);
   }
 }
@@ -266,22 +304,27 @@ void db_get_ships_by_hidcid(connection* C, std::string hid, std::string cid, std
 }
 
 void db_add_shipments(connection* C, std::string wid, std::string cid, int wh_count, std::vector<std::unordered_map<std::string, int> >& ship_maps, std::vector<std::vector<std::unordered_map<std::string, std::string> > > & prod_maps){
-  for(int i = 1; i <= wh_count; i++){
+  
+  for(int i = 0; i < wh_count; i++){
       std::stringstream ss;
       ss << i;
       std::string hid = ss.str();
       ss.str("");
-      std::string tid_list =
+
+      // get tid_list, add to table shipment
+      std::string tid_list =  // one shipment
 	get_tids_by_same_hid_cid(C, hid, cid);
       if(tid_list != std::string("")){
 	db_add_ship(C, wid, hid, cid, tid_list);
-	// get products info
+
+	// get products info 
 	std::vector<std::unordered_map<std::string, std::string> > prods;
-	db_get_prods_by_tids(C, tid_list, prods);
-	prod_maps.push_back(prods);
+	db_get_prods_by_tids(C, tid_list, prods, cid);
+	prod_maps.push_back(prods);//same cid, diff hid// all prods with same cid added
+
 	// get whnum,shipid
-	std::unordered_map<std::string, int> ship;
-	db_get_ships_by_hidcid(C, hid, cid, ship);
+	std::unordered_map<std::string, int> ship;//hid, sid
+	db_get_ships_by_hidcid(C, hid, cid, ship);// after row added in shipment
 	ship_maps.push_back(ship);
       }
   }
