@@ -42,3 +42,5 @@ void create_ACom_ALoad(std::unordered_map<std::string, int> & load, ACommands& A
 void create_UCom_UPick(std::unordered_map<std::string, int>  & package, int whid, AmazontoUPS& comd);
 void create_UCom_UDispatch(std::unordered_map<std::string, int> & package, int sid, AmazontoUPS& comd);
 bool recv_parse_UResponse(google::protobuf::io::FileInputStream * in , std::vector<std::unordered_map<std::string, int> >& truck_arriveds, std::vector<std::unordered_map<std::string, int> >& delivereds);
+bool send_UConnected(int worldid,   google::protobuf::io::FileOutputStream * outfile);
+bool recv_UConnected(int worldid,   google::protobuf::io::FileInputStream * infile);

@@ -111,6 +111,27 @@ bool send_AConnect(uint64_t worldid, int sockfd){
   
   return true;
 }
+
+bool recv_UConnected(int worldid,   google::protobuf::io::FileInputStream * infile){
+  UPStoAmazon Ures;
+  if(!  recvUMesgFrom(Ures, infile)){
+    return false;
+  }
+  return true;
+}
+
+bool send_UConnected(int worldid,   google::protobuf::io::FileOutputStream * outfile){
+  AmazontoUPS Ucom;
+  AConnectedToSim* conn = Ucom.add_aconnected();
+  conn->set_worldid(worldid);
+  
+  if(!  sendUMesgTo(Ucom, outfile)){
+    return false;
+  }
+  return true;
+}
+
+
 bool send_AConnect_recv_AConnected(uint64_t worldid, int sockfd){
   AConnect conn;
   conn.set_worldid(worldid);// worldid = the value after init world

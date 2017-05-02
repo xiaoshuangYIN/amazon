@@ -81,11 +81,15 @@ int main(int argc, char* argv[]){
   google::protobuf::io::FileOutputStream * UPS_out = new google::protobuf::io::FileOutputStream(new_fd);
   google::protobuf::io::FileInputStream * UPS_in = new google::protobuf::io::FileInputStream(new_fd);
   
-  /*
-  if(!send_UConnect_recv_UConnected(worldid, UPS_out, UPS_in)){
-    printf("send UConnect receive UConnected failed\n");
+
+  if(!recv_UConnected(worldid, UPS_in)){
+    printf("receive UConnected failed\n");
   }
-  */
+  if(!send_UConnected(worldid, UPS_out)){
+    printf("send UConnected failed\n");
+  }
+
+
   
 
 
