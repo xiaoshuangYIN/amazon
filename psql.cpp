@@ -516,6 +516,7 @@ bool db_add_act_prod(connection* C, std::string num, std::string pid, std::strin
  wid  | hid | pid |   descr    | num 
 */
 bool db_add_stock(connection* C,std::string wid, std::string whnum, std::string pid, std::string new_num, std::string descr){
+
   int num_stock = db_check_stock(C, wid, whnum, pid);
   printf("num_stock = %d\n", num_stock);
 
@@ -552,7 +553,7 @@ bool db_add_stock(connection* C,std::string wid, std::string whnum, std::string 
       W.commit();
 
       // upadte account_product
-      /*
+  
       int num_act = db_check_prod(C, pid);
       if(num_act == num_stock){
 	db_update_actprod(C, pid, new_num);
@@ -561,9 +562,9 @@ bool db_add_stock(connection* C,std::string wid, std::string whnum, std::string 
       else{
 	printf("num_act_prod = %d\n", num_act);
 	std::cerr<<"whstock and account_product not match\n";
-	db_update_actprod(C, pid, new_num)
+	db_update_actprod(C, pid, new_num);
       }
-      */
+  
       return true;
     }
     catch(const std::exception & e){
@@ -712,11 +713,13 @@ try{
     std::string init("UPDATE shipment SET ");
     std::string mid(" status_detail =  ");
     std::string WHERE(" WHERE ");
-    std::string sids(" sids = ");
+    std::string sids(" sid = ");
+    std::string lq("'");
+    std::string rq("'");
     std::string post(";");
     std::string update_q("");
 
-    update_q = init + mid + status + WHERE + sids +sid_str + post;
+    update_q = init + mid  + lq + status + rq  + WHERE + sids +sid_str + post;
       
     work W(*C);
     result R(W.exec(update_q));
@@ -775,10 +778,16 @@ void db_get_package_info(connection* C, int sid, std::unordered_map<std::string,
   // truck id
   int truckid = db_get_truckid_by_sid(C, sid_str);
   package["truckid"] = truckid;
+  printf("Udispatch truckid = %d\n", truckid);
   // x,y
   db_get_xy_by_cid(C, cid, package);
+  printf("Udispatch x = %d\n", package["delx"]);
+  printf("Udispatch y = %d\n", package["dely"]);
+  
+
   // sid 
   package["sid"] = sid;
+  printf("Udispatch sid = %d\n", sid);
 }
 
 void db_get_Aload_info(connection* C, int sid, std::unordered_map<std::string, int>&load){
@@ -804,34 +813,29 @@ void db_get_Aload_info(connection* C, int sid, std::unordered_map<std::string, i
   }
 }
 
-void db_get_sids_by_truckid_hid_status(connection* C, std::unordered_map<std::string, int>& truck_arrived, std::string ready_status, std::string not_ready_status, std::vector<int>& ready_list, std::vector<int>& not_ready_list){
+
+void db_get_sids_by_truckid_hid_status_not_ready(connection* C, std::unordered_map<std::string, int>& truck_arrived, std::string not_ready_status, std::vector<int>& not_ready_list){
   try{
     std::string truckid_str;
     To_string(truck_arrived["truckid"], truckid_str);
     std::string hid_str;
-    To_string(truck_arrived["hid"], hid_str);
+    To_string(truck_arrived["whid"], hid_str);
     
-    std::string init_retrv( "SELECT  sid FROM shipment WHERE ");
+    std::string init_retrv( "SELECT sid FROM shipment WHERE ");
     std::string truckids(" truckid = ");
-    std::string hids(" hids = ");
+    std::string hids(" hid = ");
     std::string status(" status_detail = ");
     std::string AND(" AND ");
     std::string post(";");
+    std::string lq("'");
+    std::string rq("'");
     // ready
-    std::string retrv_q = init_retrv + truckids + truckid_str + AND + hids + hid_str + AND + status + ready_status + post;
+    std::string retrv_q = init_retrv + truckids + truckid_str + AND + hids + hid_str + AND + status +lq+ not_ready_status +rq + post;
+    std::cout<< retrv_q << std::endl;
     work W(*C);
     result R(W.exec(retrv_q));
     W.commit();
     for(result::const_iterator c = R.begin(); c != R.end(); ++c){
-      int sid = c[0].as<int>();
-      ready_list.push_back(sid);
-    }
-
-    // not-ready
-    std::string q = init_retrv + truckids + truckid_str + AND + hids + hid_str + AND + status + not_ready_status + post;
-    result R2(W.exec(q));
-    W.commit();
-    for(result::const_iterator c = R2.begin(); c != R2.end(); ++c){
       int sid = c[0].as<int>();
       not_ready_list.push_back(sid);
     }
@@ -841,3 +845,182 @@ void db_get_sids_by_truckid_hid_status(connection* C, std::unordered_map<std::st
   }
   
 }
+
+void db_get_sids_by_truckid_hid_status(connection* C, std::unordered_map<std::string, int>& truck_arrived, std::string ready_status, std::string not_ready_status, std::vector<int>& ready_list, std::vector<int>& not_ready_list){
+  try{
+    std::string truckid_str;
+    To_string(truck_arrived["truckid"], truckid_str);
+    std::string hid_str;
+    To_string(truck_arrived["whid"], hid_str);
+    
+    std::string init_retrv( "SELECT sid FROM shipment WHERE ");
+    std::string truckids(" truckid = ");
+    std::string hids(" hid = ");
+    std::string status(" status_detail = ");
+    std::string AND(" AND ");
+    std::string post(";");
+    std::string lq("'");
+    std::string rq("'");
+    // ready
+    
+    std::string retrv_q = init_retrv + truckids + truckid_str + AND + hids + hid_str + AND + status + lq +ready_status + rq + post;
+    std::cout<< retrv_q << std::endl;
+    work W(*C);
+    result R(W.exec(retrv_q));
+    W.commit();
+    for(result::const_iterator c = R.begin(); c != R.end(); ++c){
+      int sid = c[0].as<int>();
+      ready_list.push_back(sid);
+    }
+
+    // not-ready
+    db_get_sids_by_truckid_hid_status_not_ready( C, truck_arrived,  not_ready_status, not_ready_list);
+      
+  }
+  catch(const std::exception & e){
+    std::cerr << e.what() << std::endl;
+  }
+  
+}
+void db_add_truckid_to_shipment(connection* C, int truckid, int sid){
+  try{
+    std::string sid_str;
+    To_string(sid, sid_str);
+    std::string truckid_str;
+    To_string(truckid, truckid_str);
+    
+    std::string init("UPDATE shipment SET ");
+    std::string mid(" truckid =  ");
+    std::string lq("'");
+    std::string rq("'");
+    std::string WHERE(" WHERE ");
+    std::string sids(" sid = ");
+    std::string post(";");
+    std::string update_q("");
+
+    update_q = init + mid + truckid_str  + WHERE + sids +sid_str + post;
+      
+    work W(*C);
+    result R(W.exec(update_q));
+    W.commit();
+    
+  }
+  catch(const std::exception & e){
+    std::cerr << e.what() << std::endl;
+  }
+}
+
+void db_add_truckid_to_shipment_by_whid_not_ready(connection* C, int truckid, int whid){
+  try{
+    std::string hid_str;
+    To_string(whid, hid_str);
+    std::string truckid_str;
+    To_string(truckid, truckid_str);
+
+    
+    std::string init("UPDATE shipment SET ");
+    std::string mid(" truckid =  ");
+    std::string WHERE(" WHERE ");
+    std::string hids(" hid = ");
+    std::string post(";");
+    std::string update_q("");
+    std::string later(" AND status_detail = 'order0' OR status_detail = 'ready'");
+    update_q = init + mid + truckid_str + WHERE + hids +hid_str + later + post;
+      
+    work W(*C);
+    result R(W.exec(update_q));
+    W.commit();
+    
+  }
+  catch(const std::exception & e){
+    std::cerr << e.what() << std::endl;
+  }
+}
+
+void db_add_truckid_to_shipment_by_whid(connection* C, int truckid, int whid){
+  try{
+    std::string hid_str;
+    To_string(whid, hid_str);
+    std::string truckid_str;
+    To_string(truckid, truckid_str);
+    
+    
+    std::string init("UPDATE shipment SET ");
+    std::string mid(" truckid =  ");
+    std::string WHERE(" WHERE ");
+    std::string hids(" hid = ");
+    std::string post(";");
+    std::string update_q("");
+    std::string later(" AND status_detail = 'ready' OR status_detail = 'order0'");
+    update_q = init + mid + truckid_str + WHERE + hids +hid_str  + post;
+    std::cout<<update_q<<std::endl;
+    work W(*C);
+    result R(W.exec(update_q));
+    W.commit();
+    //    db_add_truckid_to_shipment_by_whid_not_ready(C, truckid,  whid);
+      
+  }
+  catch(const std::exception & e){
+    std::cerr << e.what() << std::endl;
+  }
+}
+
+std::vector<int> db_get_sids_by_hids_status(connection* C, int whid, std::string status){
+  try{
+    std::vector<int> sids;
+    std::string hid_str;
+    To_string(whid, hid_str);
+    
+    std::string init_retrv( "SELECT sid FROM shipment WHERE ");
+    std::string hids(" hid = ");
+    std::string statuss(" status_detail = ");
+    std::string AND(" AND ");
+    std::string post(";");
+    std::string lq("'");
+    std::string rq("'");
+    // ready
+    
+    std::string retrv_q = init_retrv + hids + hid_str + AND + statuss + lq + status + rq + post;
+    std::cout<< retrv_q << std::endl;
+    work W(*C);
+    result R(W.exec(retrv_q));
+    W.commit();
+    for(result::const_iterator c = R.begin(); c != R.end(); ++c){
+      
+      int sid = c[0].as<int>();
+      printf("ready ship to load sid=%d\n", sid);
+      sids.push_back(sid);
+    }
+    return sids;
+  }  catch(const std::exception & e){
+    std::cerr << e.what() << std::endl;
+  }
+  
+  
+}
+void db_update_status_by_hids_status(connection* C, int whid, std::string status){
+  try{
+    std::string hid_str;
+    To_string(whid, hid_str);
+
+    std::string init("UPDATE shipment SET ");
+    std::string mid(" status_detail =  ");
+    std::string WHERE(" WHERE ");
+    std::string hids(" hid = ");
+    std::string post(";");
+    std::string update_q("");
+    std::string lq("'");
+    std::string rq("'");
+    std::string later(" AND status_detail = 'order0'");
+    update_q = init + mid + lq+ status+rq + WHERE + hids +hid_str + later + post;
+    std::cout<<update_q<<std::endl;
+    work W(*C);
+    result R(W.exec(update_q));
+    W.commit();
+      
+  }
+  catch(const std::exception & e){
+    std::cerr << e.what() << std::endl;
+  }
+}
+     

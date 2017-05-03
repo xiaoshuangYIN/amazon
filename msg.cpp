@@ -10,6 +10,8 @@ void to_String(T a, std::string& res){
 bool sendUMesgTo(AmazontoUPS &message , google::protobuf::io::FileOutputStream * out){
   {
     google::protobuf::io::CodedOutputStream output(out);
+    //test:
+    printf("send to UPS: \n %s\n", message.DebugString().c_str());
     // Write the size.
     const int size = message.ByteSize();
     output.WriteVarint32(size);
@@ -117,6 +119,8 @@ bool recv_UConnected(int worldid,   google::protobuf::io::FileInputStream * infi
   if(!  recvUMesgFrom(Ures, infile)){
     return false;
   }
+  // test
+  printf("receive from UPS: %s\n", Ures.DebugString().c_str());
   return true;
 }
 
@@ -303,8 +307,12 @@ void parse_AResponses(AResponses Ares, std::vector<int>& readys, std::vector<int
   }
   // loaded
   if(Ares.loaded_size() > 0){
+    printf("ready to dispatch size = %d\n", Ares.loaded_size());
+    
     for(int i = 0; i < Ares.loaded_size(); i++){
-      readys.push_back(Ares.loaded(i));
+      printf("ready to dispatch sid = %lu\n", Ares.loaded(i));
+
+      loadeds.push_back(Ares.loaded(i));
     }
   }
   //error
@@ -349,7 +357,7 @@ void create_ACom_APack(uint32_t whNum, uint64_t shipId, std::vector<std::unorder
     prod->set_count(count);
     prod->set_id(id);
   }
-  std::cout<<"create apack\n"<<std::endl;
+
   std::cout<<comd.DebugString()<<"\n";
 
 }
@@ -400,7 +408,9 @@ void create_UCom_UDispatch(std::unordered_map<std::string, int> & package, int s
 }
 
 void parse_UResponses(UPStoAmazon msg, std::vector<std::unordered_map<std::string, int> >& truck_arriveds, std::vector<std::unordered_map<std::string, int> >& delivereds){
+
   if(msg.truck_arrived_size() > 0){
+    printf("truck_arrived size > 0\n");
     for(int i = 0; i < msg.truck_arrived_size(); i++){
       std::unordered_map<std::string, int> map;
       map["whid"] = msg.truck_arrived(i).whid();
@@ -408,6 +418,7 @@ void parse_UResponses(UPStoAmazon msg, std::vector<std::unordered_map<std::strin
       truck_arriveds.push_back(map);
     }
   }
+
   if(msg.delivered_size() > 0){
     for(int i = 0; i < msg.delivered_size(); i++){
       std::unordered_map<std::string, int> map;
@@ -430,6 +441,7 @@ bool recv_parse_UResponse(google::protobuf::io::FileInputStream * in , std::vect
 
   // parse
   parse_UResponses(msg, truck_arriveds, delivereds);
+
 
   // return
   return true;

@@ -40,7 +40,7 @@ bool  db_get_prods_by_wid(connection* C, std::string wid, std::vector<std::unord
 void db_get_package_info(connection* C, int sid, std::unordered_map<std::string, int>& package);
 void db_get_Aload_info(connection* C, int sid, std::unordered_map<std::string, int>&load);
 void db_get_sids_by_truckid_hid_status(connection* C, std::unordered_map<std::string, int>& truck_arrived, std::string ready_status, std::string not_ready_status, std::vector<int>& ready_list, std::vector<int>& not_ready_list);
-
+std::vector<int> db_get_sids_by_hids_status(connection* C, int whid, std::string status);
 // add
 bool db_add_stock(connection* C,std::string wid, std::string whnum, std::string pid, std::string  num, std::string descr);
 
@@ -50,5 +50,8 @@ void db_add_shipments(connection* C, std::string wid, std::string cid, int wh_co
 void db_update_status_act_pur(connection* C, int sid, std::string status);
 
 void db_update_status_shipment(connection* C, int sid, std::string status);
+void db_add_truckid_to_shipment(connection* C, int truckid, int sid);
+void db_add_truckid_to_shipment_by_whid(connection* C, int truckid, int whid);
+void db_update_status_by_hids_status(connection* C, int whid, std::string status);
 // check
 bool db_check_shipment_status(connection* C, int sid, std::string status);

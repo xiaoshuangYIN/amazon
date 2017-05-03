@@ -54,6 +54,7 @@ CREATE TABLE Ship_temp (
 
 CREATE TABLE shipment (
        sid SERIAL PRIMARY KEY,	
+       truckid int8,
        wid int8,
        hid int4,
        tid_list int8[],

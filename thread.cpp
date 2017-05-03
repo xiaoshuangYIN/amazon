@@ -16,7 +16,6 @@ void* ship_thread_func(void* para){
   thread_ship_para* para_ship = (thread_ship_para*)para;
   printf("It's me, thread %s!\n", (para_ship->id).c_str());
 
-
   int purchase_id = para_ship->purchase_id;  
   int wh_count = para_ship->wh_count;
   int worldid = para_ship->wh_count;
@@ -34,6 +33,7 @@ void* ship_thread_func(void* para){
       sleep(5);
       continue;
     }
+
     //  for all products in this purchase
     for(int i = 0; i < prod_array.size(); i++){
       pq_t pq(comp(false));
@@ -183,7 +183,7 @@ void* recv_thread_func(void* para)
 	}
       }
 
-      // ready
+      // ready:
       for(int i = 0; i < readys.size(); i++){
 	printf("ready shipid = %d\n", readys[i]);
 	// update status
@@ -208,11 +208,13 @@ void* recv_thread_func(void* para)
       
       // Aloaded
       for(int i = 0; i < loadeds.size(); i++){
+	printf("ready to dispatch (in create Udispatch side) sid = %d\n", loadeds[i]);
 	// create: Udispatch
 	AmazontoUPS Ucomd;
 	std::unordered_map<std::string, int> package;
 	db_get_package_info(para_recv->C, loadeds[i], package);
 	create_UCom_UDispatch(package, loadeds[i], Ucomd);
+	printf("created Udispatch\n");
 	// lock
 	pthread_mutex_lock(&mu);
 	para_recv->Uqueue->push_back(Ucomd);
@@ -269,29 +271,46 @@ void* UPS_recv_func(void* parav){
 
       // truck arrived
       for(int i = 0; i < truck_arriveds.size(); i++){
-	std::vector<int> ready_list;
-	std::vector<int> not_ready_list;
-	// get sid by truckid and whid
-	db_get_sids_by_truckid_hid_status(para->C, truck_arriveds[i], std::string("ready"), std::string("order0"), ready_list, not_ready_list);
+	printf("number of trucks arrived = %lu, truckid = %d, whid = %d\n", truck_arriveds.size(), (truck_arriveds[i])["truckid"], (truck_arriveds[i])["whid"]);
 	
-	for(int j = 0; j < ready_list.size(); j++){
-	  // create ALoad
-	  std::unordered_map<std::string, int> load;
-	  ACommands ACom;
-	  db_get_Aload_info(para->C, ready_list[j], load);
-	  create_ACom_ALoad(load, ACom);
-	  // enqueue
-	  pthread_mutex_lock(&ma);
-	  para->queue->push_back(ACom);
-	  pthread_mutex_unlock(&ma);
-	  // update status
-	  db_update_status_shipment(para->C, ready_list[j], std::string("Aload enqueued"));
+	// add truckid to shipment
+	printf("add truckid = %d where whid = %d\n",(truck_arriveds[i])["truckid"], (truck_arriveds[i])["whid"]);
+	int whid = (truck_arriveds[i])["whid"];
+	int truckid;
+	if(truck_arriveds[i].find("truckid") != truck_arriveds[i].end()){
+	  truckid  = (truck_arriveds[i])["truckid"];
 	}
-	for(int j = 0; j < not_ready_list.size(); j++){
-	  db_update_status_shipment(para->C, not_ready_list[j], std::string("truck arrived"));
+	else{
+	  truckid = 0;
+	}
+	//db_add_truckid_to_shipment_by_whid(para->C, (truck_arriveds[i])["truckid"], (truck_arriveds[i])["whid"]);
+	//db_update_status_shipment(para->C, ready_list[j], std::string("Aload enqueued"));
+	//db_update_status_shipment(para->C, not_ready_list[j], std::string("truck arrived"));
+	
+	sleep(1);
+	// get the sids of the ready ones
+	std::vector<int> ready_sids = db_get_sids_by_hids_status(para->C, whid, std::string("ready"));
+	// upadte the un-ready ones
+	db_update_status_by_hids_status(para->C, whid, std::string("truck arrived"));
+	
+
+	// form Aload
+	std::unordered_map<std::string, int> map;
+	map["wid"] = whid;
+	map["truckid"] = truckid;
+	for(int i = 0; i < ready_sids.size(); i++){
+	  printf("ready to load sid:%d\n", ready_sids[i]);
+	  ACommands comd;
+	  map["sid"] = ready_sids[i];
+	  create_ACom_ALoad(map,comd);
+	  pthread_mutex_lock(&ma);
+	  para->queue->push_back(comd);
+	  pthread_mutex_unlock(&ma);
+	  // update the truckid of ready ones
+	  db_add_truckid_to_shipment(para->C, truckid, ready_sids[i]);
 	}
       }
-
+    
       // delievered
       for(int i = 0; i < delivereds.size(); i++){
 	//updates

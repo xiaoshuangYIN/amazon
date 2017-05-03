@@ -15,6 +15,7 @@
 
 
 const char* sim_IP = "10.236.48.17";
+//const char* sim_IP = "10.233.48.5";
 const char* PORT = "23456";
 const char* au_PORT =  "34567";
 
@@ -47,8 +48,7 @@ int main(int argc, char* argv[]){
   }
 
   /* speed up */
-
-  uint32_t speed = 60000;
+  uint32_t speed = 400000000;
   if(!send_simspeed(speed, sockfd)){
     printf("speed up fail\n");
   }
@@ -73,10 +73,12 @@ int main(int argc, char* argv[]){
   printf("server: waiting for connections from UPS...\n");            
 
   new_fd = accept_sock(sockfd_server, their_addr_server);
+
+
   while(new_fd == -1){
     new_fd = accept_sock(sockfd_server, their_addr_server);
   }
-  
+
   /* init filestream , send Uconnected through new_fd */
   google::protobuf::io::FileOutputStream * UPS_out = new google::protobuf::io::FileOutputStream(new_fd);
   google::protobuf::io::FileInputStream * UPS_in = new google::protobuf::io::FileInputStream(new_fd);
@@ -85,6 +87,10 @@ int main(int argc, char* argv[]){
   if(!recv_UConnected(worldid, UPS_in)){
     printf("receive UConnected failed\n");
   }
+  
+
+  
+    
   if(!send_UConnected(worldid, UPS_out)){
     printf("send UConnected failed\n");
   }
@@ -173,6 +179,7 @@ int main(int argc, char* argv[]){
     exit(-1);
   }
   
+
   /*
   rc3 = pthread_create(&thread_buy, NULL, buy_thread_func, &buy_para);
   if (rc3){
