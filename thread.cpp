@@ -14,7 +14,7 @@ void to_string(T a, std::string& res){
 void* ship_thread_func(void* para){
   //global:
   thread_ship_para* para_ship = (thread_ship_para*)para;
-  printf("It's me, thread %s!\n", (para_ship->id).c_str());
+  // printf("It's me, thread %s!\n", (para_ship->id).c_str());
 
   int purchase_id = para_ship->purchase_id;  
   int wh_count = para_ship->wh_count;
@@ -121,7 +121,7 @@ void* ship_thread_func(void* para){
       pthread_mutex_unlock(&mu); 
       // unlock
 
-      printf("sent APack, sid = %d\n", (ship_maps[i])["sid"]);
+      //printf("sent APack, sid = %d\n", (ship_maps[i])["sid"]);
     }
      
 
@@ -137,7 +137,7 @@ void* ship_thread_func(void* para){
 
 void* send_thread_func(void* para){
   thread_send_para* para_send = (thread_send_para*)para;
-  printf("It's me, thread %s!\n", (para_send->id).c_str());
+  //printf("It's me, thread %s!\n", (para_send->id).c_str());
  
   while(true){
 
@@ -160,7 +160,7 @@ void* send_thread_func(void* para){
 void* recv_thread_func(void* para)
 {
   thread_recv_para* para_recv = (thread_recv_para*)para;
-  printf("It's me, thread %s!\n", (para_recv->id).c_str());
+  // printf("It's me, thread %s!\n", (para_recv->id).c_str());
 
   
   do {
@@ -185,7 +185,7 @@ void* recv_thread_func(void* para)
 
       // ready:
       for(int i = 0; i < readys.size(); i++){
-	printf("ready shipid = %d\n", readys[i]);
+	//printf("ready shipid = %d\n", readys[i]);
 	// update status
 	db_update_status_act_pur(para_recv->C, readys[i], std::string("1"));
 	// check if the truck arrived
@@ -208,7 +208,7 @@ void* recv_thread_func(void* para)
       
       // Aloaded
       for(int i = 0; i < loadeds.size(); i++){
-	printf("ready to dispatch (in create Udispatch side) sid = %d\n", loadeds[i]);
+	//printf("ready to dispatch (in create Udispatch side) sid = %d\n", loadeds[i]);
 	// create: Udispatch
 	AmazontoUPS Ucomd;
 	std::unordered_map<std::string, int> package;
@@ -274,7 +274,7 @@ void* UPS_recv_func(void* parav){
 	printf("number of trucks arrived = %lu, truckid = %d, whid = %d\n", truck_arriveds.size(), (truck_arriveds[i])["truckid"], (truck_arriveds[i])["whid"]);
 	
 	// add truckid to shipment
-	printf("add truckid = %d where whid = %d\n",(truck_arriveds[i])["truckid"], (truck_arriveds[i])["whid"]);
+	//printf("add truckid = %d where whid = %d\n",(truck_arriveds[i])["truckid"], (truck_arriveds[i])["whid"]);
 	int whid = (truck_arriveds[i])["whid"];
 	int truckid;
 	if(truck_arriveds[i].find("truckid") != truck_arriveds[i].end()){
@@ -299,7 +299,7 @@ void* UPS_recv_func(void* parav){
 	map["wid"] = whid;
 	map["truckid"] = truckid;
 	for(int i = 0; i < ready_sids.size(); i++){
-	  printf("ready to load sid:%d\n", ready_sids[i]);
+	  //printf("ready to load sid:%d\n", ready_sids[i]);
 	  ACommands comd;
 	  map["sid"] = ready_sids[i];
 	  create_ACom_ALoad(map,comd);
@@ -328,7 +328,7 @@ void* UPS_recv_func(void* parav){
 
 void* UPS_send_func(void* parav){
   thread_Ucom_para* para = (thread_Ucom_para*)parav;
-  printf("It's me, thread %s!\n", (para->id).c_str());
+  //printf("It's me, thread %s!\n", (para->id).c_str());
 
   while(true){
     // lock

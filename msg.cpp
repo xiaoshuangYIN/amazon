@@ -307,10 +307,10 @@ void parse_AResponses(AResponses Ares, std::vector<int>& readys, std::vector<int
   }
   // loaded
   if(Ares.loaded_size() > 0){
-    printf("ready to dispatch size = %d\n", Ares.loaded_size());
+    //printf("ready to dispatch size = %d\n", Ares.loaded_size());
     
     for(int i = 0; i < Ares.loaded_size(); i++){
-      printf("ready to dispatch sid = %lu\n", Ares.loaded(i));
+      //printf("ready to dispatch sid = %lu\n", Ares.loaded(i));
 
       loadeds.push_back(Ares.loaded(i));
     }
@@ -410,11 +410,11 @@ void create_UCom_UDispatch(std::unordered_map<std::string, int> & package, int s
 void parse_UResponses(UPStoAmazon msg, std::vector<std::unordered_map<std::string, int> >& truck_arriveds, std::vector<std::unordered_map<std::string, int> >& delivereds){
 
   if(msg.truck_arrived_size() > 0){
-    printf("truck_arrived size > 0\n");
+    //printf("truck_arrived size > 0\n");
     for(int i = 0; i < msg.truck_arrived_size(); i++){
       std::unordered_map<std::string, int> map;
       map["whid"] = msg.truck_arrived(i).whid();
-      map["truckid"] = msg.truck_arrived(i).truckid();
+      map["truckid"] = (int)(msg.truck_arrived(i).truckid());
       truck_arriveds.push_back(map);
     }
   }
@@ -437,7 +437,7 @@ bool recv_parse_UResponse(google::protobuf::io::FileInputStream * in , std::vect
     return false;
   }
   // print response
-  printf("rec from UPS: %s\n", msg.DebugString().c_str());
+  printf("rec from UPS:\n %s\n", msg.DebugString().c_str());
 
   // parse
   parse_UResponses(msg, truck_arriveds, delivereds);

@@ -48,7 +48,7 @@ bool db_get_purch(connection* C, std::string status, std::string purchase_id, st
       map["dely"] = c[4].as<std::string>();
       map["status"] = c[5].as<std::string>();
       map["purchase_summary_id"] = c[6].as<std::string>();
-      std::cout<<"test count " << map["descrp"] << " " << map["count"]<<std::endl;
+      //std::cout<<"test count " << map["descrp"] << " " << map["count"]<<std::endl;
       map_array.push_back(map);
 
     }
@@ -93,7 +93,7 @@ bool db_add_ship_temp(connection* C, std::string wid, std::string hid, std::stri
     std::string post(");");
     std::string comma (",");
     std::string insert_q("");
-    std::cout<<"test " << pid << " " << num_buy << std::endl;
+    //std::cout<<"test " << pid << " " << num_buy << std::endl;
     insert_q = pre + table + mid
       + wid + comma
       + hid + comma
@@ -185,13 +185,13 @@ bool db_add_ship(connection* C, std::string wid, std::string hid, std::string ci
 void parse_str(std::string tid_list, std::vector<std::string>& tid_vector){
   std::istringstream ss(tid_list);
   std::string token;
-  std::cout<<"*******\n";
+  //std::cout<<"*******\n";
   while(std::getline(ss, token, ',')) {
     tid_vector.push_back(token);
-    std::cout <<"---------" <<std::endl;
-    std::cout<<token<<std::endl;
+    //std::cout <<"---------" <<std::endl;
+    //std::cout<<token<<std::endl;
   }
-  std::cout<<"*******\n";
+  //std::cout<<"*******\n";
   
 }
 
@@ -518,7 +518,7 @@ bool db_add_act_prod(connection* C, std::string num, std::string pid, std::strin
 bool db_add_stock(connection* C,std::string wid, std::string whnum, std::string pid, std::string new_num, std::string descr){
 
   int num_stock = db_check_stock(C, wid, whnum, pid);
-  printf("num_stock = %d\n", num_stock);
+  //printf("num_stock = %d\n", num_stock);
 
   if(num_stock >= 0){
     try{
@@ -557,7 +557,7 @@ bool db_add_stock(connection* C,std::string wid, std::string whnum, std::string 
       int num_act = db_check_prod(C, pid);
       if(num_act == num_stock){
 	db_update_actprod(C, pid, new_num);
-	printf("num_act_prod = %d\n", num_act);
+	//printf("num_act_prod = %d\n", num_act);
       }
       else{
 	printf("num_act_prod = %d\n", num_act);
@@ -778,16 +778,16 @@ void db_get_package_info(connection* C, int sid, std::unordered_map<std::string,
   // truck id
   int truckid = db_get_truckid_by_sid(C, sid_str);
   package["truckid"] = truckid;
-  printf("Udispatch truckid = %d\n", truckid);
+  //printf("Udispatch truckid = %d\n", truckid);
   // x,y
   db_get_xy_by_cid(C, cid, package);
-  printf("Udispatch x = %d\n", package["delx"]);
-  printf("Udispatch y = %d\n", package["dely"]);
+  //printf("Udispatch x = %d\n", package["delx"]);
+  //printf("Udispatch y = %d\n", package["dely"]);
   
 
   // sid 
   package["sid"] = sid;
-  printf("Udispatch sid = %d\n", sid);
+  //printf("Udispatch sid = %d\n", sid);
 }
 
 void db_get_Aload_info(connection* C, int sid, std::unordered_map<std::string, int>&load){
@@ -831,7 +831,7 @@ void db_get_sids_by_truckid_hid_status_not_ready(connection* C, std::unordered_m
     std::string rq("'");
     // ready
     std::string retrv_q = init_retrv + truckids + truckid_str + AND + hids + hid_str + AND + status +lq+ not_ready_status +rq + post;
-    std::cout<< retrv_q << std::endl;
+    //std::cout<< retrv_q << std::endl;
     work W(*C);
     result R(W.exec(retrv_q));
     W.commit();
@@ -864,7 +864,7 @@ void db_get_sids_by_truckid_hid_status(connection* C, std::unordered_map<std::st
     // ready
     
     std::string retrv_q = init_retrv + truckids + truckid_str + AND + hids + hid_str + AND + status + lq +ready_status + rq + post;
-    std::cout<< retrv_q << std::endl;
+    //std::cout<< retrv_q << std::endl;
     work W(*C);
     result R(W.exec(retrv_q));
     W.commit();
@@ -953,7 +953,7 @@ void db_add_truckid_to_shipment_by_whid(connection* C, int truckid, int whid){
     std::string update_q("");
     std::string later(" AND status_detail = 'ready' OR status_detail = 'order0'");
     update_q = init + mid + truckid_str + WHERE + hids +hid_str  + post;
-    std::cout<<update_q<<std::endl;
+    //std::cout<<update_q<<std::endl;
     work W(*C);
     result R(W.exec(update_q));
     W.commit();
@@ -981,14 +981,14 @@ std::vector<int> db_get_sids_by_hids_status(connection* C, int whid, std::string
     // ready
     
     std::string retrv_q = init_retrv + hids + hid_str + AND + statuss + lq + status + rq + post;
-    std::cout<< retrv_q << std::endl;
+    //std::cout<< retrv_q << std::endl;
     work W(*C);
     result R(W.exec(retrv_q));
     W.commit();
     for(result::const_iterator c = R.begin(); c != R.end(); ++c){
       
       int sid = c[0].as<int>();
-      printf("ready ship to load sid=%d\n", sid);
+      //printf("ready ship to load sid=%d\n", sid);
       sids.push_back(sid);
     }
     return sids;
@@ -1013,7 +1013,7 @@ void db_update_status_by_hids_status(connection* C, int whid, std::string status
     std::string rq("'");
     std::string later(" AND status_detail = 'order0'");
     update_q = init + mid + lq+ status+rq + WHERE + hids +hid_str + later + post;
-    std::cout<<update_q<<std::endl;
+    //std::cout<<update_q<<std::endl;
     work W(*C);
     result R(W.exec(update_q));
     W.commit();
