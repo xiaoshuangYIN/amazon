@@ -391,6 +391,7 @@ void create_UCom_UPick(std::unordered_map<std::string, int>  & package, int whid
     pkg->set_packageid((uint32_t)package["sid"]);
     pkg->set_delx((uint32_t)package["delx"]);
     pkg->set_dely((uint32_t)package["dely"]);
+    pkg->set_purchaseid((uint64_t)package["cid"]);
     //package->set_upsAccount((vv_packages[i][j])["upsact"]);
 }
 

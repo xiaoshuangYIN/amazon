@@ -305,6 +305,12 @@ class pkgInfo : public ::google::protobuf::Message /* @@protoc_insertion_point(c
   ::std::string* release_description();
   void set_allocated_description(::std::string* description);
 
+  // optional int64 purchaseid = 6;
+  void clear_purchaseid();
+  static const int kPurchaseidFieldNumber = 6;
+  ::google::protobuf::int64 purchaseid() const;
+  void set_purchaseid(::google::protobuf::int64 value);
+
   // @@protoc_insertion_point(class_scope:pkgInfo)
  private:
 
@@ -315,6 +321,7 @@ class pkgInfo : public ::google::protobuf::Message /* @@protoc_insertion_point(c
   ::google::protobuf::int32 dely_;
   ::google::protobuf::int64 upsacccount_;
   ::google::protobuf::internal::ArenaStringPtr description_;
+  ::google::protobuf::int64 purchaseid_;
   mutable int _cached_size_;
   friend void  protobuf_AddDesc_AmazonUPS_2eproto();
   friend void protobuf_AssignDesc_AmazonUPS_2eproto();
@@ -1068,6 +1075,20 @@ inline void pkgInfo::set_allocated_description(::std::string* description) {
   }
   description_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), description);
   // @@protoc_insertion_point(field_set_allocated:pkgInfo.description)
+}
+
+// optional int64 purchaseid = 6;
+inline void pkgInfo::clear_purchaseid() {
+  purchaseid_ = GOOGLE_LONGLONG(0);
+}
+inline ::google::protobuf::int64 pkgInfo::purchaseid() const {
+  // @@protoc_insertion_point(field_get:pkgInfo.purchaseid)
+  return purchaseid_;
+}
+inline void pkgInfo::set_purchaseid(::google::protobuf::int64 value) {
+  
+  purchaseid_ = value;
+  // @@protoc_insertion_point(field_set:pkgInfo.purchaseid)
 }
 
 // -------------------------------------------------------------------

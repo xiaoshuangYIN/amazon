@@ -48,7 +48,7 @@ int main(int argc, char* argv[]){
   }
 
   /* speed up */
-  uint32_t speed = 400000000;
+  uint32_t speed = 10000000;
   if(!send_simspeed(speed, sockfd)){
     printf("speed up fail\n");
   }
@@ -83,11 +83,11 @@ int main(int argc, char* argv[]){
   google::protobuf::io::FileOutputStream * UPS_out = new google::protobuf::io::FileOutputStream(new_fd);
   google::protobuf::io::FileInputStream * UPS_in = new google::protobuf::io::FileInputStream(new_fd);
   
-
+  /*
   if(!recv_UConnected(worldid, UPS_in)){
     printf("receive UConnected failed\n");
   }
-  
+  */
 
   
     

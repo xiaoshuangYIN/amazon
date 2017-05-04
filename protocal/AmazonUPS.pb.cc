@@ -88,12 +88,13 @@ void protobuf_AssignDesc_AmazonUPS_2eproto() {
       GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(UConnectedToSim, _internal_metadata_),
       GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(UConnectedToSim, _is_default_instance_));
   pkgInfo_descriptor_ = file->message_type(2);
-  static const int pkgInfo_offsets_[5] = {
+  static const int pkgInfo_offsets_[6] = {
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(pkgInfo, packageid_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(pkgInfo, delx_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(pkgInfo, dely_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(pkgInfo, upsacccount_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(pkgInfo, description_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(pkgInfo, purchaseid_),
   };
   pkgInfo_reflection_ =
     ::google::protobuf::internal::GeneratedMessageReflection::NewGeneratedMessageReflection(
@@ -271,21 +272,22 @@ void protobuf_AddDesc_AmazonUPS_2eproto() {
   ::google::protobuf::DescriptorPool::InternalAddGeneratedFile(
     "\n\017AmazonUPS.proto\"\"\n\017AConnectedToSim\022\017\n\007"
     "worldid\030\001 \001(\003\"\"\n\017UConnectedToSim\022\017\n\007worl"
-    "did\030\001 \001(\003\"b\n\007pkgInfo\022\021\n\tpackageid\030\001 \001(\003\022"
+    "did\030\001 \001(\003\"v\n\007pkgInfo\022\021\n\tpackageid\030\001 \001(\003\022"
     "\014\n\004delX\030\002 \001(\005\022\014\n\004delY\030\003 \001(\005\022\023\n\013upsAcccou"
-    "nt\030\004 \001(\003\022\023\n\013description\030\005 \001(\t\"O\n\tsendTru"
-    "ck\022\014\n\004whid\030\001 \001(\005\022\032\n\010packages\030\002 \003(\0132\010.pkg"
-    "Info\022\013\n\003whX\030\003 \001(\005\022\013\n\003whY\030\004 \001(\005\"-\n\014truckA"
-    "rrived\022\014\n\004whid\030\001 \001(\005\022\017\n\007truckid\030\002 \001(\005\"<\n"
-    "\rdispatchTruck\022\017\n\007truckid\030\001 \001(\005\022\032\n\010packa"
-    "ges\030\002 \003(\0132\010.pkgInfo\"%\n\020packageDelivered\022"
-    "\021\n\tpackageid\030\001 \001(\003\"\177\n\013UPStoAmazon\022$\n\rtru"
-    "ck_arrived\030\001 \003(\0132\r.truckArrived\022$\n\tdeliv"
-    "ered\030\002 \003(\0132\021.packageDelivered\022$\n\nuconnec"
-    "ted\030\003 \003(\0132\020.UConnectedToSim\"{\n\013AmazontoU"
-    "PS\022\036\n\nsend_truck\030\001 \003(\0132\n.sendTruck\022&\n\016di"
-    "spatch_truck\030\002 \003(\0132\016.dispatchTruck\022$\n\nac"
-    "onnected\030\003 \003(\0132\020.AConnectedToSimb\006proto3", 680);
+    "nt\030\004 \001(\003\022\023\n\013description\030\005 \001(\t\022\022\n\npurchas"
+    "eid\030\006 \001(\003\"O\n\tsendTruck\022\014\n\004whid\030\001 \001(\005\022\032\n\010"
+    "packages\030\002 \003(\0132\010.pkgInfo\022\013\n\003whX\030\003 \001(\005\022\013\n"
+    "\003whY\030\004 \001(\005\"-\n\014truckArrived\022\014\n\004whid\030\001 \001(\005"
+    "\022\017\n\007truckid\030\002 \001(\005\"<\n\rdispatchTruck\022\017\n\007tr"
+    "uckid\030\001 \001(\005\022\032\n\010packages\030\002 \003(\0132\010.pkgInfo\""
+    "%\n\020packageDelivered\022\021\n\tpackageid\030\001 \001(\003\"\177"
+    "\n\013UPStoAmazon\022$\n\rtruck_arrived\030\001 \003(\0132\r.t"
+    "ruckArrived\022$\n\tdelivered\030\002 \003(\0132\021.package"
+    "Delivered\022$\n\nuconnected\030\003 \003(\0132\020.UConnect"
+    "edToSim\"{\n\013AmazontoUPS\022\036\n\nsend_truck\030\001 \003"
+    "(\0132\n.sendTruck\022&\n\016dispatch_truck\030\002 \003(\0132\016"
+    ".dispatchTruck\022$\n\naconnected\030\003 \003(\0132\020.ACo"
+    "nnectedToSimb\006proto3", 700);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "AmazonUPS.proto", &protobuf_RegisterTypes);
   AConnectedToSim::default_instance_ = new AConnectedToSim();
@@ -800,6 +802,7 @@ const int pkgInfo::kDelXFieldNumber;
 const int pkgInfo::kDelYFieldNumber;
 const int pkgInfo::kUpsAcccountFieldNumber;
 const int pkgInfo::kDescriptionFieldNumber;
+const int pkgInfo::kPurchaseidFieldNumber;
 #endif  // !defined(_MSC_VER) || _MSC_VER >= 1900
 
 pkgInfo::pkgInfo()
@@ -829,6 +832,7 @@ void pkgInfo::SharedCtor() {
   dely_ = 0;
   upsacccount_ = GOOGLE_LONGLONG(0);
   description_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+  purchaseid_ = GOOGLE_LONGLONG(0);
 }
 
 pkgInfo::~pkgInfo() {
@@ -887,6 +891,7 @@ void pkgInfo::Clear() {
 
   ZR_(packageid_, upsacccount_);
   description_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+  purchaseid_ = GOOGLE_LONGLONG(0);
 
 #undef ZR_HELPER_
 #undef ZR_
@@ -975,6 +980,21 @@ bool pkgInfo::MergePartialFromCodedStream(
         } else {
           goto handle_unusual;
         }
+        if (input->ExpectTag(48)) goto parse_purchaseid;
+        break;
+      }
+
+      // optional int64 purchaseid = 6;
+      case 6: {
+        if (tag == 48) {
+         parse_purchaseid:
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+                   ::google::protobuf::int64, ::google::protobuf::internal::WireFormatLite::TYPE_INT64>(
+                 input, &purchaseid_)));
+
+        } else {
+          goto handle_unusual;
+        }
         if (input->ExpectAtEnd()) goto success;
         break;
       }
@@ -1033,6 +1053,11 @@ void pkgInfo::SerializeWithCachedSizes(
       5, this->description(), output);
   }
 
+  // optional int64 purchaseid = 6;
+  if (this->purchaseid() != 0) {
+    ::google::protobuf::internal::WireFormatLite::WriteInt64(6, this->purchaseid(), output);
+  }
+
   // @@protoc_insertion_point(serialize_end:pkgInfo)
 }
 
@@ -1068,6 +1093,11 @@ void pkgInfo::SerializeWithCachedSizes(
     target =
       ::google::protobuf::internal::WireFormatLite::WriteStringToArray(
         5, this->description(), target);
+  }
+
+  // optional int64 purchaseid = 6;
+  if (this->purchaseid() != 0) {
+    target = ::google::protobuf::internal::WireFormatLite::WriteInt64ToArray(6, this->purchaseid(), target);
   }
 
   // @@protoc_insertion_point(serialize_to_array_end:pkgInfo)
@@ -1111,6 +1141,13 @@ int pkgInfo::ByteSize() const {
     total_size += 1 +
       ::google::protobuf::internal::WireFormatLite::StringSize(
         this->description());
+  }
+
+  // optional int64 purchaseid = 6;
+  if (this->purchaseid() != 0) {
+    total_size += 1 +
+      ::google::protobuf::internal::WireFormatLite::Int64Size(
+        this->purchaseid());
   }
 
   GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
@@ -1157,6 +1194,9 @@ void pkgInfo::MergeFrom(const pkgInfo& from) {
 
     description_.AssignWithDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), from.description_);
   }
+  if (from.purchaseid() != 0) {
+    set_purchaseid(from.purchaseid());
+  }
 }
 
 void pkgInfo::CopyFrom(const ::google::protobuf::Message& from) {
@@ -1188,6 +1228,7 @@ void pkgInfo::InternalSwap(pkgInfo* other) {
   std::swap(dely_, other->dely_);
   std::swap(upsacccount_, other->upsacccount_);
   description_.Swap(&other->description_);
+  std::swap(purchaseid_, other->purchaseid_);
   _internal_metadata_.Swap(&other->_internal_metadata_);
   std::swap(_cached_size_, other->_cached_size_);
 }
@@ -1301,6 +1342,20 @@ void pkgInfo::clear_description() {
   }
   description_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), description);
   // @@protoc_insertion_point(field_set_allocated:pkgInfo.description)
+}
+
+// optional int64 purchaseid = 6;
+void pkgInfo::clear_purchaseid() {
+  purchaseid_ = GOOGLE_LONGLONG(0);
+}
+ ::google::protobuf::int64 pkgInfo::purchaseid() const {
+  // @@protoc_insertion_point(field_get:pkgInfo.purchaseid)
+  return purchaseid_;
+}
+ void pkgInfo::set_purchaseid(::google::protobuf::int64 value) {
+  
+  purchaseid_ = value;
+  // @@protoc_insertion_point(field_set:pkgInfo.purchaseid)
 }
 
 #endif  // PROTOBUF_INLINE_NOT_IN_HEADERS

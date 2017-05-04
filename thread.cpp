@@ -105,6 +105,9 @@ void* ship_thread_func(void* para){
        ACommands Acomd;
        
        create_ACom_APack((ship_maps[i])["hid"], (ship_maps[i])["sid"] , prod_maps[i], Acomd);
+       std::string sid_str;
+       to_string( (ship_maps[i])["sid"], sid_str);
+       db_add_trucknum_sctpur(para_ship->C, sid_str, purchase_id_str);
        //lock
        pthread_mutex_lock(&ma);
        para_ship->queue->push_back(Acomd);
@@ -213,6 +216,7 @@ void* recv_thread_func(void* para)
 	AmazontoUPS Ucomd;
 	std::unordered_map<std::string, int> package;
 	db_get_package_info(para_recv->C, loadeds[i], package);
+	//db_add_tracking(para_recv->C, loadeds[i], loadeds[i]);
 	create_UCom_UDispatch(package, loadeds[i], Ucomd);
 	printf("created Udispatch\n");
 	// lock

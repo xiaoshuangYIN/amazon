@@ -768,7 +768,25 @@ int  db_get_truckid_by_sid(connection* C, std::string sid_str){
     std::cerr << e.what() << std::endl;
   }
 }
-  
+int  db_get_cid_by_sid_int(connection* C, std::string sid_str){
+  try{
+    int res = 0;
+    std::string init("SELECT cid FROM shipment WHERE sid = ");
+    std::string post(";");
+    std::string q = init + sid_str + post;
+    work W(*C);
+    result R(W.exec(q));
+    W.commit();
+    for(result::const_iterator c = R.begin(); c != R.end(); ++c){
+      res = c[0].as<int>();
+    }
+    return res;
+  }
+  catch(const std::exception & e){
+    std::cerr << e.what() << std::endl;
+  }
+}
+
 void db_get_package_info(connection* C, int sid, std::unordered_map<std::string, int>& package){
 
   std::string sid_str;
@@ -778,16 +796,23 @@ void db_get_package_info(connection* C, int sid, std::unordered_map<std::string,
   // truck id
   int truckid = db_get_truckid_by_sid(C, sid_str);
   package["truckid"] = truckid;
-  //printf("Udispatch truckid = %d\n", truckid);
+
+  // cid
+  int cid_int;
+  std::stringstream ss;
+  ss.str(cid);
+  ss >> cid_int;
+  package["cid"] = cid_int;
+
+  
+  
   // x,y
   db_get_xy_by_cid(C, cid, package);
-  //printf("Udispatch x = %d\n", package["delx"]);
-  //printf("Udispatch y = %d\n", package["dely"]);
   
-
+  
   // sid 
   package["sid"] = sid;
-  //printf("Udispatch sid = %d\n", sid);
+
 }
 
 void db_get_Aload_info(connection* C, int sid, std::unordered_map<std::string, int>&load){
@@ -1024,3 +1049,50 @@ void db_update_status_by_hids_status(connection* C, int whid, std::string status
   }
 }
      
+void db_add_trucknum_sctpur(connection* C, std::string sid, std::string cid){
+  try{
+    
+
+    std::string init("UPDATE account_purchase SET ");
+    std::string mid(" tracking =  ");
+    std::string WHERE(" WHERE ");
+    std::string cids(" purchase_summary_id  = ");
+    std::string post(";");
+    std::string update_q("");
+    update_q = init + mid + sid + WHERE + cids + cid + post;
+    //std::cout<<update_q<<std::endl;
+    work W(*C);
+    result R(W.exec(update_q));
+    W.commit();
+      
+  }
+  catch(const std::exception & e){
+    std::cerr << e.what() << std::endl;
+  }
+}
+void db_add_tracking(connection* C, int tracking, int sid){
+  try{
+    std::string track_str;
+    To_string(tracking, track_str);
+    std::string sid_str;
+    To_string(sid, sid_str);
+
+    
+    std::string init("UPDATE shipment SET ");
+    std::string mid(" tracking =  ");
+    std::string WHERE(" WHERE ");
+    std::string sids(" sid = ");
+    std::string post(";");
+    std::string update_q("");
+
+    update_q = init + mid + track_str  + WHERE + sids +sid_str + post;
+      
+    work W(*C);
+    result R(W.exec(update_q));
+    W.commit();
+    
+  }
+  catch(const std::exception & e){
+    std::cerr << e.what() << std::endl;
+  }
+}

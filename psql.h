@@ -53,5 +53,7 @@ void db_update_status_shipment(connection* C, int sid, std::string status);
 void db_add_truckid_to_shipment(connection* C, int truckid, int sid);
 void db_add_truckid_to_shipment_by_whid(connection* C, int truckid, int whid);
 void db_update_status_by_hids_status(connection* C, int whid, std::string status);
+void db_add_trucknum_sctpur(connection* C, std::string sid, std::string cid);
+void db_add_tracking(connection* C, int tracking, int sid);
 // check
 bool db_check_shipment_status(connection* C, int sid, std::string status);
